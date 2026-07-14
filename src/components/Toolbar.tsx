@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowUpDown, Check, Search } from 'lucide-react'
+import { ArrowUpDown, Check, RefreshCw, Search } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
 import { SORT_LABELS } from '@/lib/filter'
@@ -16,7 +16,19 @@ export function Toolbar() {
   const setQuery = useStore((s) => s.setQuery)
   const sort = useStore((s) => s.sort)
   const setSort = useStore((s) => s.setSort)
+  const load = useStore((s) => s.load)
   const [open, setOpen] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const refresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      await load()
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -30,6 +42,16 @@ export function Toolbar() {
           aria-label="Search anime"
         />
       </div>
+
+      <Button
+        variant="secondary"
+        size="icon"
+        className="rounded-full"
+        aria-label="Refresh"
+        onClick={refresh}
+      >
+        <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} />
+      </Button>
 
       <div className="relative">
         <Button
