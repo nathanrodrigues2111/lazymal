@@ -49,41 +49,14 @@ function dedupe(list: Anime[]): Anime[] {
   return list.filter((a) => !seen.has(a.mal_id) && seen.add(a.mal_id))
 }
 
-// Safety cap — no real season comes near this many pages (25 titles each).
-const MAX_PAGES = 15
-
 /**
- * Fetch the ENTIRE current season by walking Jikan's pages. Titles are streamed
- * back via `onPage` as each page lands (so the grid fills progressively), and
- * the full de-duplicated list is returned. A delay between pages keeps us under
- * Jikan's ~3 req/s rate limit.
+ * Fetch the current season in a single request to the bare `/seasons/now`
+ * endpoint. This is the most reliable Jikan cache key — the paginated
+ * `?page=N` variants are separate cache entries that frequently 504.
  */
-export async function fetchNow(
-  signal?: AbortSignal,
-  onPage?: (soFar: Anime[]) => void,
-): Promise<Anime[]> {
-  const all: Anime[] = []
-  const seen = new Set<number>()
-  let page = 1
-  let hasNext = true
-
-  while (hasNext && page <= MAX_PAGES) {
-    const res = await get<SeasonResponse>(
-      `/seasons/now?sfw=true&page=${page}`,
-      signal,
-    )
-    for (const a of res.data) {
-      if (!seen.has(a.mal_id)) {
-        seen.add(a.mal_id)
-        all.push(a)
-      }
-    }
-    onPage?.(all.slice())
-    hasNext = res.pagination.has_next_page
-    page += 1
-    if (hasNext) await sleep(700)
-  }
-  return all
+export async function fetchNow(signal?: AbortSignal): Promise<Anime[]> {
+  const res = await get<SeasonResponse>('/seasons/now', signal)
+  return dedupe(res.data)
 }
 
 /** A specific season (single request, like fetchNow). */
