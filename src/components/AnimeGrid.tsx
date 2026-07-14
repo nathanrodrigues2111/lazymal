@@ -6,6 +6,7 @@ import { deriveGenres, filterAndSort, isMatch } from '@/lib/filter'
 import { AnimeCard } from '@/components/AnimeCard'
 import { GenreFilter } from '@/components/GenreFilter'
 import { CryingGirl } from '@/components/CryingGirl'
+import { ExternalSearch } from '@/components/ExternalSearch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 
@@ -17,6 +18,7 @@ export function AnimeGrid() {
   const query = useStore((s) => s.query)
   const select = useStore((s) => s.select)
   const load = useStore((s) => s.load)
+  const media = useStore((s) => s.media)
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
 
@@ -46,6 +48,8 @@ export function AnimeGrid() {
   return (
     <div className="space-y-4">
       <GenreFilter genres={genres} />
+
+      <ExternalSearch query={query} media={media} />
 
       {visible.length === 0 ? (
         <Empty
