@@ -35,7 +35,9 @@ export default function App() {
 
   // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
   const { scrollY } = useScroll()
-  const spinTarget = useTransform(scrollY, (v) => v * 0.5)
+  // One gentle spin within the top ~280px, then it holds — no spinning deep
+  // down the page.
+  const spinTarget = useTransform(scrollY, [0, 280], [0, 360], { clamp: true })
   const spin = useSpring(spinTarget, { stiffness: 80, damping: 18, mass: 0.4 })
 
   // Load the current media on mount, then warm the other mode's cache in the
