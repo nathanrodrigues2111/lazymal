@@ -35,6 +35,30 @@ export const WATCH_SOURCES: WatchSource[] = [
 /** Manga readers for the "Read online" launcher. */
 export const READ_SOURCES: WatchSource[] = [
   {
+    name: 'Atsu',
+    home: 'https://atsu.moe',
+    build: ({ english, romaji }) =>
+      `https://atsu.moe/explore?search=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Kagane',
+    home: 'https://kagane.to',
+    build: ({ english, romaji }) =>
+      `https://kagane.to/search?q=${enc(english || romaji)}&size=99`,
+  },
+  {
+    name: 'Mangadot',
+    home: 'https://mangadot.net',
+    build: ({ english, romaji }) =>
+      `https://mangadot.net/search?search=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Onisaga',
+    home: 'https://onisaga.com',
+    build: ({ english, romaji }) =>
+      `https://onisaga.com/search/${enc(english || romaji)}`,
+  },
+  {
     name: 'MangaDex',
     home: 'https://mangadex.org',
     build: ({ english, romaji }) =>
