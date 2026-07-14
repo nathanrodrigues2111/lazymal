@@ -39,8 +39,8 @@ export function Onboarding() {
               </h2>
             </div>
             <p className="mb-5 text-sm text-muted-foreground">
-              Pick a few genres and LazyMAL will highlight this season's anime
-              made for you. Change it anytime from settings.
+              Pick a few genres and lazymal will highlight this season’s anime
+              made just for you~ Change it anytime from settings.
             </p>
 
             <GenrePicker selected={picks} onToggle={toggle} />

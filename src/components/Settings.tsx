@@ -32,10 +32,10 @@ export function Settings({ open, onOpenChange }: Props) {
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <div className="overflow-y-auto overscroll-contain px-5 pb-8 pt-4">
-          <DrawerTitle>Your taste</DrawerTitle>
+          <DrawerTitle>Your taste~</DrawerTitle>
           <DrawerDescription className="mt-1">
-            LazyMAL highlights this season's anime that match your favorite
-            genres.
+            lazymal gently highlights this season’s anime that match your
+            favorite genres.
           </DrawerDescription>
 
           <div className="mt-5">
@@ -46,6 +46,7 @@ export function Settings({ open, onOpenChange }: Props) {
             {starredCount > 0 && (
               <Button
                 variant="secondary"
+                size="lg"
                 className="flex-1 rounded-full"
                 onClick={clearStars}
               >

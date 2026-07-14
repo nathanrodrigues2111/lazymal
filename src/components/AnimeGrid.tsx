@@ -23,10 +23,21 @@ export function AnimeGrid() {
   const select = useStore((s) => s.select)
   const load = useStore((s) => s.load)
   const media = useStore((s) => s.media)
+  const clearGenres = useStore((s) => s.clearGenres)
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
+  const toggleForYou = usePrefs((s) => s.toggleForYou)
   const starred = usePrefs((s) => s.starred)
   const starredItems = usePrefs((s) => s.starredItems)
+
+  // Searching spans everything: reset any active genre chip / For You so a
+  // query isn't scoped to a subset — it goes to "All".
+  useEffect(() => {
+    if (!query.trim()) return
+    if (genreIds.length > 0) clearGenres()
+    if (forYou) toggleForYou()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
 
   const starredIds = useMemo(() => {
     const p = `${media}:`
@@ -56,13 +67,13 @@ export function AnimeGrid() {
     return [...extras, ...listed]
   }, [forYou, listed, starredItems, media])
 
-  // Live search: a query that matches nothing locally (and not in For You)
-  // fetches results from the search endpoint.
+  // Live search: any query searches ALL anime/manga via the search endpoint
+  // (not just the loaded season list), unless we're in the For You view.
   const [remote, setRemote] = useState<Anime[]>([])
   const [searching, setSearching] = useState(false)
   useEffect(() => {
     const q = query.trim()
-    if (!q || forYou || listed.length > 0) {
+    if (!q || forYou) {
       setRemote([])
       setSearching(false)
       return
@@ -72,20 +83,20 @@ export function AnimeGrid() {
       const r = await searchTitles(q, media)
       setRemote(r)
       setSearching(false)
-    }, 450)
+    }, 400)
     return () => clearTimeout(t)
-  }, [query, forYou, listed.length, media])
+  }, [query, forYou, media])
 
   if (status === 'loading') return <GridSkeleton />
 
   if (status === 'error') {
     return (
       <Empty
-        title="Mou~ it won't load…"
-        body="MyAnimeList is being sleepy right now. Give it a sec and poke it again!"
+        title="Mou~ it won’t load…"
+        body="MyAnimeList is being a little sleepy right now~ give it a sec and poke it again!"
         action={
           <Button onClick={() => load()} className="rounded-full">
-            Try again
+            try again
           </Button>
         }
       />
@@ -93,8 +104,8 @@ export function AnimeGrid() {
   }
 
   const q = query.trim()
-  const items = visible.length > 0 ? visible : remote
-  const isSearchView = visible.length === 0 && !!q && !forYou
+  const searchMode = !!q && !forYou
+  const items = searchMode ? remote : visible
 
   return (
     <div className="space-y-4">
@@ -102,11 +113,11 @@ export function AnimeGrid() {
 
       <ExternalSearch query={query} media={media} />
 
-      {isSearchView && (items.length > 0 || searching) && (
+      {searchMode && (items.length > 0 || searching) && (
         <p className="text-xs font-medium text-muted-foreground">
           {searching
-            ? `Searching all ${media} for “${q}”…`
-            : `Search results for “${q}”`}
+            ? `Peeking through every ${media} for “${q}”…`
+            : `Here’s what I found for “${q}”~`}
         </p>
       )}
 
@@ -130,18 +141,18 @@ export function AnimeGrid() {
         </div>
       ) : (
         <Empty
-          title="Nothing here~"
+          title={q ? 'Nothing found…' : 'It’s a little empty here…'}
           body={
             q
-              ? `No ${media} found for “${q}”. Try the source buttons above to search the streaming/reading sites.`
-              : `No ${media} match those filters. Try clearing them!`
+              ? `Couldn’t find any ${media} called “${q}” anywhere~ try the source buttons above to peek at the streaming sites!`
+              : `Nothing matches these filters~ tap “All” to see everything again!`
           }
         />
       )}
 
-      {items.length > 0 && !isSearchView && (
+      {items.length > 0 && !searchMode && (
         <p className="py-4 text-center text-xs text-muted-foreground">
-          {items.length} titles 🌸
+          {items.length} lovely titles~
         </p>
       )}
     </div>

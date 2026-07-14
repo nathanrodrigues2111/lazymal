@@ -12,9 +12,10 @@ export default defineConfig({
     registerType: 'autoUpdate',
     includeAssets: ['apple-touch-icon.png'],
     manifest: {
-      name: 'LazyMAL · Seasonal Anime',
-      short_name: 'LazyMAL',
-      description: "Browse this season's anime in a slick, mobile-first UI.",
+      name: 'lazymal · seasonal anime',
+      short_name: 'lazymal',
+      description:
+        "your cozy little corner for browsing this season's anime & manga~ slick, mobile-first, and made with love.",
       theme_color: '#000000',
       background_color: '#000000',
       display: 'standalone',
