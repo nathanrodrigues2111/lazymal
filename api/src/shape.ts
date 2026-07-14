@@ -19,6 +19,8 @@ export interface MalItem {
   url: string
   title: string
   title_english: string | null
+  title_japanese?: string | null
+  rating?: string | null
   images: { jpg: MalImage; webp: MalImage }
   type: string | null
   episodes: number | null

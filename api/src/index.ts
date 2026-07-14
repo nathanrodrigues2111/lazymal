@@ -29,7 +29,7 @@ import {
   topAnimeOfficial,
   topMangaOfficial,
 } from './official'
-import { scrapeAdaptedManga, scrapeSeason } from './scrape'
+import { scrapeAdaptedManga, scrapeDetail, scrapeSeason } from './scrape'
 import type { ListResponse } from './shape'
 
 export interface Env {
@@ -152,11 +152,25 @@ export default {
       } else if (seg[0] === 'manga' && q && seg.length === 1) {
         resp = json(clean(await searchMangaOfficial(q, page, key(env))))
       }
-      // ---- details: /anime/{id}[/full] , /manga/{id}[/full] (official) ----
-      else if (seg[0] === 'anime' && /^\d+$/.test(seg[1] || '')) {
-        resp = json(await animeDetailsOfficial(parseInt(seg[1], 10), key(env)))
-      } else if (seg[0] === 'manga' && /^\d+$/.test(seg[1] || '')) {
-        resp = json(await mangaDetailsOfficial(parseInt(seg[1], 10), key(env)))
+      // ---- details: /anime/{id}[/full] , /manga/{id}[/full] ----
+      // Official API when a key is set; otherwise scrape the MAL detail page
+      // (self-sufficient — no Jikan dependency for rank/popularity/etc.).
+      else if (
+        (seg[0] === 'anime' || seg[0] === 'manga') &&
+        /^\d+$/.test(seg[1] || '')
+      ) {
+        const media = seg[0] as 'anime' | 'manga'
+        const id = parseInt(seg[1], 10)
+        if (env.MAL_CLIENT_ID) {
+          resp = json(
+            media === 'anime'
+              ? await animeDetailsOfficial(id, env.MAL_CLIENT_ID)
+              : await mangaDetailsOfficial(id, env.MAL_CLIENT_ID),
+          )
+        } else {
+          const data = await scrapeDetail(media, id)
+          resp = data ? json({ data }) : json({ error: 'Not found' }, 404)
+        }
       } else {
         return json({ error: 'Not found', path: url.pathname }, 404)
       }

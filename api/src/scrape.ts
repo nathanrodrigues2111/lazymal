@@ -471,3 +471,152 @@ export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
   }
   return { data, pagination: { current_page: 1, has_next_page: false } }
 }
+
+// --- single-title detail scraper -------------------------------------------
+
+/**
+ * Scrape one title's detail page (`/anime/{id}` or `/manga/{id}`).
+ *
+ * The detail page is large and its sidebar is a long list of
+ * `<span class="dark_text">Label:</span> value` pairs plus a statistics block.
+ * HTMLRewriter is awkward for reading the sibling text that follows each label,
+ * so we regex the raw HTML instead. Every extraction is optional — parsing runs
+ * inside try/catch and we return the partial item even when fields are missing.
+ */
+export async function scrapeDetail(
+  media: 'anime' | 'manga',
+  id: number,
+): Promise<MalItem | null> {
+  const url = `https://myanimelist.net/${media}/${id}`
+  const res = await fetch(url, { headers: HEADERS })
+  if (!res.ok) return null
+  const html = await res.text()
+
+  const it = blankItem()
+  it.mal_id = id
+  it.url = url
+
+  try {
+    // Trimmed text right after a `Label:</span>` sidebar entry (plain values;
+    // anchor-wrapped values won't match, since the next char is `<`).
+    const field = (label: string): string | undefined =>
+      html
+        .match(new RegExp(label + ':<\\/span>\\s*([^<\\r\\n]+)', 'i'))?.[1]
+        ?.trim()
+
+    // Title.
+    const title = html.match(
+      /<h1[^>]*class="title-name[^"]*"[^>]*>\s*<strong>([^<]+)<\/strong>/i,
+    )?.[1]
+    if (title) it.title = decode(title.trim())
+
+    // Alternative titles.
+    const eng = field('English')
+    if (eng) it.title_english = decode(eng)
+    const jpn = field('Japanese')
+    if (jpn) it.title_japanese = decode(jpn)
+
+    // Type — usually an anchor, occasionally plain text.
+    const type =
+      html.match(/Type:<\/span>[\s\S]{0,80}?>([^<]+)<\/a>/i)?.[1] || field('Type')
+    if (type) it.type = decode(type.trim())
+
+    // Counts. "Unknown" → null.
+    const eps = field('Episodes')
+    if (eps) it.episodes = /unknown/i.test(eps) ? null : toInt(eps)
+    const chapters = field('Chapters')
+    if (chapters !== undefined)
+      it.chapters = /unknown/i.test(chapters) ? null : toInt(chapters)
+    const volumes = field('Volumes')
+    if (volumes !== undefined)
+      it.volumes = /unknown/i.test(volumes) ? null : toInt(volumes)
+
+    // Status → airing (anime) / publishing (manga) flags.
+    const status = field('Status')
+    if (status) {
+      it.status = decode(status)
+      it.airing = /airing/i.test(status)
+      it.publishing = /publishing/i.test(status)
+    }
+
+    // Content rating (anime), e.g. "PG-13 - Teens 13 or older".
+    const rating = field('Rating')
+    if (rating) it.rating = decode(rating)
+
+    // Member count.
+    it.members = toInt(field('Members'))
+
+    // Statistics block.
+    it.score = toScore(html.match(/itemprop="ratingValue"[^>]*>\s*([\d.]+)/i)?.[1])
+    it.scored_by = toInt(html.match(/itemprop="ratingCount"[^>]*>\s*([\d,]+)/i)?.[1])
+    it.rank = toInt(html.match(/Ranked:<\/span>[\s\S]{0,40}?#([\d,]+)/i)?.[1])
+    it.popularity = toInt(html.match(/Popularity:<\/span>[\s\S]{0,20}?#([\d,]+)/i)?.[1])
+
+    // Synopsis — strip inner tags and a trailing "[Written by ...]" credit.
+    const syn = html.match(/<p itemprop="description">([\s\S]*?)<\/p>/i)?.[1]
+    if (syn) {
+      const clean = decode(syn.replace(/<[^>]+>/g, ''))
+        .replace(/\[Written by[^\]]*\]\s*$/i, '')
+        .trim()
+      it.synopsis = clean || null
+    }
+
+    // Poster image — MAL lazy-loads, so data-src may hold the real URL.
+    const img = html.match(/itemprop="image"[^>]*(?:data-src|src)="([^"]+)"/i)?.[1]
+    if (img) it.images = buildImages(bigImage(img))
+
+    // Genres / themes / demographics all render as `/genre/{id}/Name` anchors.
+    // Collect every one, deduped by id. (Shape lumps them into `genres`.)
+    const seen = new Set<number>()
+    const genreRe =
+      /href="(\/(anime|manga)\/genre\/(\d+)\/[^"]+)"[^>]*>([^<]+)<\/a>/g
+    let gm: RegExpExecArray | null
+    while ((gm = genreRe.exec(html))) {
+      const gidNum = +gm[3]
+      if (seen.has(gidNum)) continue
+      seen.add(gidNum)
+      it.genres.push({
+        mal_id: gidNum,
+        type: gm[2],
+        name: decode(gm[4].trim()),
+        url: `https://myanimelist.net${gm[1]}`,
+      })
+    }
+    it.themes = []
+
+    // Studios (anime) / Authors (manga): grab the label's block up to the next
+    // `</div>`, then pull anchor ids + names. Best-effort; empty on any miss.
+    if (media === 'anime') {
+      const block = html.match(/Studios:<\/span>([\s\S]*?)<\/div>/i)?.[1]
+      if (block) {
+        const re = /href="\/anime\/producer\/(\d+)\/[^"]*"[^>]*>([^<]+)<\/a>/g
+        let m: RegExpExecArray | null
+        while ((m = re.exec(block)))
+          it.studios.push({ mal_id: +m[1], name: decode(m[2].trim()) })
+      }
+    } else {
+      const block = html.match(/Authors:<\/span>([\s\S]*?)<\/div>/i)?.[1]
+      it.authors = []
+      if (block) {
+        const re = /href="\/people\/(\d+)\/[^"]*"[^>]*>([^<]+)<\/a>/g
+        let m: RegExpExecArray | null
+        while ((m = re.exec(block)))
+          it.authors.push({ mal_id: +m[1], name: decode(m[2].trim()) })
+      }
+    }
+
+    // season / year from "Premiered:" (anime only, optional).
+    if (media === 'anime') {
+      const prem = html.match(/Premiered:<\/span>[\s\S]{0,80}?>([^<]+)<\/a>/i)?.[1]
+      const pm = prem?.trim().match(/([A-Za-z]+)\s+(\d{4})/)
+      if (pm) {
+        it.season = pm[1].toLowerCase()
+        it.year = parseInt(pm[2], 10)
+      }
+    }
+  } catch {
+    // Return whatever we managed to fill in.
+  }
+
+  return it
+}
