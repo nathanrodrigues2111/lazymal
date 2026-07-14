@@ -45,12 +45,10 @@ export const useStore = create<StoreState>((set, get) => ({
     const { season } = get()
     set({ status: 'loading', anime: [] })
     try {
-      // Stream pages in as they arrive so the grid fills progressively.
-      const onPage = (soFar: Anime[]) => {
-        if (id === requestId) set({ anime: soFar, status: 'ready' })
-      }
+      // Fetch every page first, then render once — avoids the grid re-sorting
+      // and shifting as pages stream in.
       const anime = sameSeason(season, currentSeason())
-        ? await fetchNow(controller.signal, onPage)
+        ? await fetchNow(controller.signal)
         : await fetchSeason(season, controller.signal)
       if (id !== requestId) return
       set({ anime, status: 'ready' })
