@@ -47,16 +47,16 @@ export const WATCH_SOURCES: WatchSource[] = [
 /** Manga readers for the "Read online" launcher. */
 export const READ_SOURCES: WatchSource[] = [
   {
-    name: 'Comix',
-    home: 'https://comix.to',
-    build: ({ english, romaji }) =>
-      `https://comix.to/browse?q=${enc(english || romaji)}&sort=relevance:desc`,
-  },
-  {
     name: 'Atsu',
     home: 'https://atsu.moe',
     build: ({ english, romaji }) =>
       `https://atsu.moe/explore?search=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Comix',
+    home: 'https://comix.to',
+    build: ({ english, romaji }) =>
+      `https://comix.to/browse?q=${enc(english || romaji)}&sort=relevance:desc`,
   },
   {
     name: 'Kagane',
