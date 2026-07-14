@@ -57,6 +57,20 @@ function toScore(s: string | null | undefined): number | null {
   return Number.isNaN(n) ? null : n
 }
 
+/** Parse an abbreviated count like `328K`, `1.2M`, or `1,234` → integer. */
+function toCompactInt(s: string | null | undefined): number | null {
+  if (!s) return null
+  const m = s.replace(/,/g, '').match(/([\d.]+)\s*([KMB])?/i)
+  if (!m) return null
+  let n = parseFloat(m[1])
+  if (Number.isNaN(n)) return null
+  const suf = (m[2] || '').toUpperCase()
+  if (suf === 'K') n *= 1e3
+  else if (suf === 'M') n *= 1e6
+  else if (suf === 'B') n *= 1e9
+  return Math.round(n)
+}
+
 /** Fresh MalItem with every field defaulted; handlers fill in what they find. */
 function blankItem(): MalItem {
   return {
@@ -298,4 +312,90 @@ export async function scrapeTopManga(page: number): Promise<ListResponse> {
       has_next_page: data.length >= 50,
     },
   }
+}
+
+// --- currently-relevant manga scraper --------------------------------------
+
+/**
+ * Scrape "Manga Adapted to Anime" filtered to airing adaptations
+ * (`/manga/adapted?type=airing`) — a good proxy for currently-relevant /
+ * ongoing manga. Reuses the season card layout, but score/members live in
+ * `.scormem-item` and counts are abbreviated (e.g. `328K`). Single page.
+ */
+export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
+  if (page > 1) {
+    return { data: [], pagination: { current_page: page, has_next_page: false } }
+  }
+
+  const url = 'https://myanimelist.net/manga/adapted?type=airing'
+  const res = await fetch(url, { headers: HEADERS })
+  if (!res.ok) throw new Error(`MAL page responded ${res.status}`)
+
+  const items: MalItem[] = []
+  let cur: MalItem | null = null
+
+  await new HTMLRewriter()
+    .on('div.js-seasonal-anime', {
+      element() {
+        cur = blankItem()
+        cur.type = 'Manga'
+        items.push(cur)
+      },
+    })
+    // Title cell uses h2_manga_title here, so match the anchor directly.
+    .on('div.js-seasonal-anime a.link-title', {
+      element(el) {
+        if (!cur) return
+        const href = el.getAttribute('href') || ''
+        const m = href.match(/manga\/(\d+)/)
+        if (m) {
+          cur.mal_id = parseInt(m[1], 10)
+          cur.url = `https://myanimelist.net/manga/${cur.mal_id}`
+        }
+      },
+      text: textSink((v) => {
+        if (cur && !cur.title) cur.title = v.trim()
+      }),
+    })
+    .on('div.js-seasonal-anime .image img', {
+      element(el) {
+        if (!cur) return
+        const src = el.getAttribute('data-src') || el.getAttribute('src') || ''
+        if (src) cur.images = buildImages(src)
+      },
+    })
+    .on('div.js-seasonal-anime .scormem-item.score', {
+      text: textSink((v) => {
+        if (cur && cur.score === null) cur.score = toScore(v)
+      }),
+    })
+    .on('div.js-seasonal-anime .scormem-item.member', {
+      text: textSink((v) => {
+        if (cur && cur.members === null) cur.members = toCompactInt(v)
+      }),
+    })
+    .on('div.js-seasonal-anime .genre a', {
+      text: textSink((v) => {
+        const name = v.trim()
+        if (cur && name) cur.genres.push({ mal_id: 0, name })
+      }),
+    })
+    .on('div.js-seasonal-anime .synopsis .preline', {
+      text: textSink((v) => {
+        if (!cur || cur.synopsis) return
+        const s = v.replace(/\[Written by[^\]]*\]\s*$/i, '').trim()
+        cur.synopsis = s || null
+      }),
+    })
+    .transform(res)
+    .arrayBuffer()
+
+  const data = items.filter((it) => it.mal_id && it.title)
+  // Mark as manga so the frontend renders it in manga mode.
+  for (const it of data) {
+    it.chapters = null
+    it.volumes = null
+    it.authors = []
+  }
+  return { data, pagination: { current_page: 1, has_next_page: false } }
 }

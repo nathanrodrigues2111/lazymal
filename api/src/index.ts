@@ -29,7 +29,7 @@ import {
   topAnimeOfficial,
   topMangaOfficial,
 } from './official'
-import { scrapeSeason, scrapeTopManga } from './scrape'
+import { scrapeAdaptedManga, scrapeSeason, scrapeTopManga } from './scrape'
 
 export interface Env {
   MAL_CLIENT_ID?: string
@@ -84,6 +84,7 @@ export default {
     const seg = url.pathname.split('/').filter(Boolean)
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1)
     const q = url.searchParams.get('q')?.trim()
+    const filter = url.searchParams.get('filter')
     const official = url.searchParams.get('source') === 'official'
 
     let resp: Response
@@ -110,10 +111,13 @@ export default {
       }
       // ---- /top/... ----
       else if (seg[0] === 'top' && seg[1] === 'manga') {
+        // ?filter=publishing → currently-relevant (airing-adapted) manga.
         resp = json(
           official
             ? await topMangaOfficial(page, key(env))
-            : await scrapeTopManga(page),
+            : filter === 'publishing'
+              ? await scrapeAdaptedManga(page)
+              : await scrapeTopManga(page),
         )
       } else if (seg[0] === 'top' && seg[1] === 'anime') {
         resp = json(await topAnimeOfficial(page, key(env)))
