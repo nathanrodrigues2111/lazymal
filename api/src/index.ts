@@ -30,10 +30,15 @@ import {
   topMangaOfficial,
 } from './official'
 import { scrapeAdaptedManga, scrapeSeason, scrapeTopManga } from './scrape'
+import type { ListResponse } from './shape'
 
 export interface Env {
   MAL_CLIENT_ID?: string
 }
+
+// Adult tags to drop when SFW filtering is on (default). Ecchi is intentionally
+// kept — only truly adult (Rx) content is removed, matching Jikan's sfw=true.
+const ADULT = new Set(['Hentai', 'Erotica'])
 
 const CORS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -86,6 +91,20 @@ export default {
     const q = url.searchParams.get('q')?.trim()
     const filter = url.searchParams.get('filter')
     const official = url.searchParams.get('source') === 'official'
+    // Show everything by default; ?sfw=true drops adult entries.
+    const sfw = url.searchParams.get('sfw') === 'true'
+    const clean = (r: ListResponse): ListResponse =>
+      sfw
+        ? {
+            ...r,
+            data: r.data.filter(
+              (it) =>
+                ![...it.genres, ...(it.themes || [])].some((g) =>
+                  ADULT.has(g.name),
+                ),
+            ),
+          }
+        : r
 
     let resp: Response
     try {
@@ -93,9 +112,11 @@ export default {
       if (seg[0] === 'seasons' && seg[1] === 'now') {
         const { year, season } = currentSeason()
         resp = json(
-          official
-            ? await seasonOfficial(year, season, page, key(env))
-            : await scrapeSeason(year, season, page),
+          clean(
+            official
+              ? await seasonOfficial(year, season, page, key(env))
+              : await scrapeSeason(year, season, page),
+          ),
         )
       } else if (
         seg[0] === 'seasons' &&
@@ -104,29 +125,33 @@ export default {
       ) {
         const year = parseInt(seg[1], 10)
         resp = json(
-          official
-            ? await seasonOfficial(year, seg[2], page, key(env))
-            : await scrapeSeason(year, seg[2], page),
+          clean(
+            official
+              ? await seasonOfficial(year, seg[2], page, key(env))
+              : await scrapeSeason(year, seg[2], page),
+          ),
         )
       }
       // ---- /top/... ----
       else if (seg[0] === 'top' && seg[1] === 'manga') {
         // ?filter=publishing → currently-relevant (airing-adapted) manga.
         resp = json(
-          official
-            ? await topMangaOfficial(page, key(env))
-            : filter === 'publishing'
-              ? await scrapeAdaptedManga(page)
-              : await scrapeTopManga(page),
+          clean(
+            official
+              ? await topMangaOfficial(page, key(env))
+              : filter === 'publishing'
+                ? await scrapeAdaptedManga(page)
+                : await scrapeTopManga(page),
+          ),
         )
       } else if (seg[0] === 'top' && seg[1] === 'anime') {
-        resp = json(await topAnimeOfficial(page, key(env)))
+        resp = json(clean(await topAnimeOfficial(page, key(env))))
       }
       // ---- search: /anime?q= , /manga?q= (official) ----
       else if (seg[0] === 'anime' && q && seg.length === 1) {
-        resp = json(await searchAnimeOfficial(q, page, key(env)))
+        resp = json(clean(await searchAnimeOfficial(q, page, key(env))))
       } else if (seg[0] === 'manga' && q && seg.length === 1) {
-        resp = json(await searchMangaOfficial(q, page, key(env)))
+        resp = json(clean(await searchMangaOfficial(q, page, key(env))))
       }
       // ---- details: /anime/{id}[/full] , /manga/{id}[/full] (official) ----
       else if (seg[0] === 'anime' && /^\d+$/.test(seg[1] || '')) {
