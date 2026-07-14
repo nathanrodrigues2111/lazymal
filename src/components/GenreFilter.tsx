@@ -13,12 +13,13 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
+  const hasStarred = usePrefs((s) => s.starred.length > 0)
 
   if (genres.length === 0) return null
 
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-      {favorites.length > 0 && (
+      {(favorites.length > 0 || hasStarred) && (
         <Chip active={forYou} onClick={toggleForYou} className="gap-1">
           <Sparkles className="size-3" />
           For You

@@ -23,6 +23,8 @@ export interface Anime {
   url: string
   title: string
   title_english: string | null
+  title_japanese?: string | null
+  rating?: string | null
   images: { jpg: AnimeImage; webp: AnimeImage }
   type: string | null
   episodes: number | null

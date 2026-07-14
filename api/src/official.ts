@@ -55,6 +55,13 @@ const mapType = (t?: string) => (t ? MEDIA_TYPE[t] || t.toUpperCase() : null)
 const mapStatus = (s?: string) => (s ? STATUS[s] || s : null)
 const tags = (arr?: Node[]): Tag[] =>
   (arr || []).map((g) => ({ mal_id: g.id, name: g.name }))
+const genreTags = (arr: Node[] | undefined, media: 'anime' | 'manga'): Tag[] =>
+  (arr || []).map((g) => ({
+    mal_id: g.id,
+    type: media,
+    name: g.name,
+    url: `https://myanimelist.net/${media}/genre/${g.id}/${g.name.replace(/\s+/g, '_')}`,
+  }))
 const imagesOf = (n: Node) =>
   buildImages(
     n.main_picture?.large || n.main_picture?.medium || '',

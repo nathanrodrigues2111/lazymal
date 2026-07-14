@@ -1,4 +1,5 @@
 import type { Anime, Season, SeasonResponse } from './types'
+import { readDetail, writeDetail } from './cache'
 
 // Our self-hosted LazyMAL API worker is primary; the public Jikan API is the
 // backup if the worker is ever unreachable. Override the primary via
@@ -36,7 +37,10 @@ async function fetchBase<T>(
     }
     if (res.ok) return (await res.json()) as T
     lastStatus = res.status
-    if ((res.status === 429 || res.status >= 500) && attempt < maxAttempts - 1) {
+    // 501 = our worker has no MAL key for this endpoint → don't retry, fall back
+    // to Jikan immediately. 429/other-5xx are transient and worth retrying.
+    const retryable = res.status === 429 || (res.status >= 500 && res.status !== 501)
+    if (retryable && attempt < maxAttempts - 1) {
       await sleep(res.status === 429 ? 1200 : 700 * (attempt + 1))
       continue
     }
@@ -90,7 +94,11 @@ export async function fetchNow(signal?: AbortSignal): Promise<Anime[]> {
     let res: SeasonResponse
     try {
       // Fewer retries per page so a flaky page fails fast instead of hanging.
-      res = await get<SeasonResponse>(`/seasons/now?page=${page}`, signal, 3)
+      res = await get<SeasonResponse>(
+        `/seasons/now?sfw=true&page=${page}`,
+        signal,
+        3,
+      )
     } catch (e) {
       if ((e as Error).name === 'AbortError') throw e
       break // stop paging; use whatever we've gathered so far
@@ -109,8 +117,30 @@ export async function fetchNow(signal?: AbortSignal): Promise<Anime[]> {
   if (all.length > 0) return dedupe(all)
 
   // Fallback: the reliable bare endpoint (more retries).
-  const res = await get<SeasonResponse>('/seasons/now', signal, 6)
+  const res = await get<SeasonResponse>('/seasons/now?sfw=true', signal, 6)
   return dedupe(res.data)
+}
+
+/**
+ * Full details for one title. Our scraped list lacks fields like rank &
+ * popularity, so the detail view enriches from here — the worker has no key so
+ * get() falls back to Jikan's /anime|manga/{id}, which returns everything.
+ */
+export async function fetchDetails(
+  id: number,
+  media: 'anime' | 'manga',
+  signal?: AbortSignal,
+): Promise<Anime | null> {
+  const key = `${media}-${id}`
+  const cached = readDetail(key)
+  const fresh = get<{ data: Anime }>(`/${media}/${id}`, signal, 3)
+    .then((res) => {
+      writeDetail(key, res.data)
+      return res.data
+    })
+    .catch(() => null)
+  // Instant from cache when available; otherwise wait for the network.
+  return cached ?? (await fresh)
 }
 
 /** A specific season (single request, like fetchNow). */

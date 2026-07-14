@@ -4,8 +4,6 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-import { cloudflare } from "@cloudflare/vite-plugin";
-
 // Base is the repo name so assets resolve on GitHub Pages (user.github.io/lazymal).
 // For a custom domain or local preview, build with `--base=/`.
 export default defineConfig({
@@ -48,19 +46,20 @@ export default defineConfig({
           },
         },
         {
-          // Jikan API — network-first so data stays fresh, cache as offline fallback.
-          urlPattern: /^https:\/\/api\.jikan\.moe\/.*/i,
+          // Our worker API + Jikan — network-first, cache as offline fallback.
+          urlPattern:
+            /^https:\/\/(lazymal-api\.lazyneilmedia\.workers\.dev|api\.jikan\.moe)\/.*/i,
           handler: 'NetworkFirst',
           options: {
-            cacheName: 'jikan-api',
+            cacheName: 'lazymal-api',
             networkTimeoutSeconds: 8,
-            expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 6 },
+            expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 6 },
             cacheableResponse: { statuses: [0, 200] },
           },
         },
       ],
     },
-  }), cloudflare()],
+  })],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

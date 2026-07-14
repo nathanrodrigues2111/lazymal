@@ -3,11 +3,14 @@
 
 export interface Tag {
   mal_id: number
+  type?: string
   name: string
+  url?: string
 }
 
 export interface MalImage {
   image_url: string
+  small_image_url: string
   large_image_url: string
 }
 
@@ -52,8 +55,6 @@ export interface ListResponse {
 
 export function buildImages(url: string, medium?: string): MalItem['images'] {
   const m = medium || url
-  return {
-    jpg: { image_url: m, large_image_url: url },
-    webp: { image_url: m, large_image_url: url },
-  }
+  const jpg = { image_url: m, small_image_url: m, large_image_url: url }
+  return { jpg, webp: { ...jpg } }
 }

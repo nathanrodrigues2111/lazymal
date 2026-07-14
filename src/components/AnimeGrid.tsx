@@ -21,11 +21,23 @@ export function AnimeGrid() {
   const media = useStore((s) => s.media)
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
+  const starred = usePrefs((s) => s.starred)
+
+  // Starred mal_ids for the current media (keys are `${media}:${id}`).
+  const starredIds = useMemo(() => {
+    const p = `${media}:`
+    return new Set(
+      starred
+        .filter((k) => k.startsWith(p))
+        .map((k) => Number(k.slice(p.length))),
+    )
+  }, [starred, media])
 
   const genres = useMemo(() => deriveGenres(anime), [anime])
   const visible = useMemo(
-    () => filterAndSort(anime, genreIds, sort, query, favorites, forYou),
-    [anime, genreIds, sort, query, favorites, forYou],
+    () =>
+      filterAndSort(anime, genreIds, sort, query, favorites, forYou, starredIds),
+    [anime, genreIds, sort, query, favorites, forYou, starredIds],
   )
 
   if (status === 'loading') return <GridSkeleton />
@@ -55,7 +67,7 @@ export function AnimeGrid() {
         <Empty
           crying={false}
           title="Nothing here~"
-          body="No anime match those filters. Try clearing them or searching something else!"
+          body={`No ${media} match those filters. Try clearing them or searching something else!`}
         />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 xl:grid-cols-6">

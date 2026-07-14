@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
+import { usePrefs } from '@/store/usePrefs'
+import { fetchDetails } from '@/lib/jikan'
 import { cn, compact } from '@/lib/utils'
 import { countdown, localAirLabel, nextAiring } from '@/lib/airing'
 import {
@@ -20,8 +22,6 @@ import {
   FMHY_VIDEO,
   READ_SOURCES,
   WATCH_SOURCES,
-  pingSite,
-  type SiteStatus,
 } from '@/lib/watch'
 import type { Anime } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
@@ -45,28 +45,37 @@ export function DetailSheet() {
     if (selected) setShown(selected)
   }, [selected])
 
-  // Ping each source's homepage when the sheet opens to show a live
-  // online/offline dot (streaming for anime, readers for manga).
-  const [siteStatus, setSiteStatus] = useState<Record<string, SiteStatus>>({})
+  // Enrich with full details (rank, popularity, …) that the scraped list lacks.
+  const [extra, setExtra] = useState<Anime | null>(null)
+  const [loadingExtra, setLoadingExtra] = useState(false)
   useEffect(() => {
-    if (!open || !shown) return
+    setExtra(null)
+    if (!shown) return
     let cancelled = false
-    const mangaItem =
+    const media =
       shown.publishing !== undefined ||
       shown.chapters !== undefined ||
       shown.volumes !== undefined
-    const srcs = mangaItem ? READ_SOURCES : WATCH_SOURCES
-    setSiteStatus(Object.fromEntries(srcs.map((s) => [s.name, 'checking'])))
-    for (const src of srcs) {
-      pingSite(src.home).then((ok) => {
-        if (!cancelled)
-          setSiteStatus((prev) => ({ ...prev, [src.name]: ok ? 'up' : 'down' }))
+        ? 'manga'
+        : 'anime'
+    setLoadingExtra(true)
+    fetchDetails(shown.mal_id, media)
+      .then((d) => {
+        if (!cancelled && d) setExtra(d)
       })
-    }
+      .finally(() => {
+        if (!cancelled) setLoadingExtra(false)
+      })
     return () => {
       cancelled = true
     }
-  }, [open, shown])
+  }, [shown?.mal_id])
+
+  // Favorite (star) toggle.
+  const media = useStore((s) => s.media)
+  const toggleStar = usePrefs((s) => s.toggleStar)
+  const starKey = shown ? `${media}:${shown.mal_id}` : ''
+  const starred = usePrefs((s) => (starKey ? s.starred.includes(starKey) : false))
 
   const [copied, setCopied] = useState(false)
   const copyTitle = async () => {
@@ -85,13 +94,7 @@ export function DetailSheet() {
     (shown.publishing !== undefined ||
       shown.chapters !== undefined ||
       shown.volumes !== undefined)
-  // Online sources first, offline pushed to the bottom (stable within a group).
-  const statusRank: Record<SiteStatus, number> = { up: 0, checking: 1, down: 2 }
-  const sources = [...(isManga ? READ_SOURCES : WATCH_SOURCES)].sort(
-    (a, b) =>
-      statusRank[siteStatus[a.name] ?? 'checking'] -
-      statusRank[siteStatus[b.name] ?? 'checking'],
-  )
+  const sources = isManga ? READ_SOURCES : WATCH_SOURCES
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && select(null)}>
@@ -111,6 +114,22 @@ export function DetailSheet() {
                     {shown.title_english || shown.title}
                   </DrawerTitle>
                   <button
+                    onClick={() => toggleStar(starKey)}
+                    aria-label={
+                      starred ? 'Remove from favorites' : 'Add to favorites'
+                    }
+                    className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-panel-2 transition-transform active:scale-90"
+                  >
+                    <Star
+                      className={cn(
+                        'size-4',
+                        starred
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-muted-foreground',
+                      )}
+                    />
+                  </button>
+                  <button
                     onClick={copyTitle}
                     aria-label="Copy title"
                     className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:text-foreground active:scale-90"
@@ -122,28 +141,59 @@ export function DetailSheet() {
                     )}
                   </button>
                 </div>
-                {shown.title_english && shown.title_english !== shown.title && (
-                  <DrawerDescription className="clamp-2">
-                    {shown.title}
-                  </DrawerDescription>
-                )}
+                {(() => {
+                  const displayed = shown.title_english || shown.title
+                  const secondary = [shown.title, extra?.title_japanese].filter(
+                    (t) => t && t !== displayed,
+                  )
+                  if (secondary.length === 0 && !(loadingExtra && !extra))
+                    return null
+                  return (
+                    <DrawerDescription className="clamp-2">
+                      {secondary.join(' · ')}
+                      {loadingExtra && !extra && (
+                        <span className="shimmer ml-1.5 inline-block h-3 w-28 translate-y-0.5 rounded bg-line align-middle" />
+                      )}
+                    </DrawerDescription>
+                  )
+                })()}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <Badge className="bg-yellow-400/15 text-yellow-300">
                     <Star className="size-3 fill-current" />
                     {shown.score ? shown.score.toFixed(2) : 'N/A'}
                   </Badge>
-                  {shown.type && <Badge variant="outline">{shown.type}</Badge>}
-                  {shown.episodes != null && (
-                    <Badge variant="outline">{shown.episodes} eps</Badge>
+                  {(shown.type ?? extra?.type) && (
+                    <Badge variant="outline">{shown.type ?? extra?.type}</Badge>
                   )}
-                  {shown.chapters != null && (
-                    <Badge variant="outline">{shown.chapters} ch</Badge>
+                  {extra?.rating && (
+                    <Badge variant="outline">{extra.rating.split(' - ')[0]}</Badge>
                   )}
-                  {shown.volumes != null && (
-                    <Badge variant="outline">{shown.volumes} vol</Badge>
+                  {(extra?.episodes ?? shown.episodes) != null && (
+                    <Badge variant="outline">
+                      {extra?.episodes ?? shown.episodes} eps
+                    </Badge>
                   )}
-                  {shown.status && (
-                    <Badge variant="secondary">{shown.status}</Badge>
+                  {(extra?.chapters ?? shown.chapters) != null && (
+                    <Badge variant="outline">
+                      {extra?.chapters ?? shown.chapters} ch
+                    </Badge>
+                  )}
+                  {(extra?.volumes ?? shown.volumes) != null && (
+                    <Badge variant="outline">
+                      {extra?.volumes ?? shown.volumes} vol
+                    </Badge>
+                  )}
+                  {(extra?.status ?? shown.status) && (
+                    <Badge variant="secondary">
+                      {extra?.status ?? shown.status}
+                    </Badge>
+                  )}
+                  {/* Skeleton pills for rating/status still loading from Jikan */}
+                  {loadingExtra && !extra && (
+                    <>
+                      <span className="shimmer h-[22px] w-9 rounded-full bg-line" />
+                      <span className="shimmer h-[22px] w-28 rounded-full bg-line" />
+                    </>
                   )}
                 </div>
               </div>
@@ -151,9 +201,9 @@ export function DetailSheet() {
 
             {/* Stat row */}
             <div className="mt-4 grid grid-cols-3 gap-2">
-              <Stat icon={<Trophy className="size-3.5" />} label="Rank" value={shown.rank ? `#${shown.rank}` : '—'} />
-              <Stat icon={<Hash className="size-3.5" />} label="Popularity" value={shown.popularity ? `#${shown.popularity}` : '—'} />
-              <Stat icon={<Users className="size-3.5" />} label="Members" value={compact(shown.members)} />
+              <Stat icon={<Trophy className="size-3.5" />} label="Rank" value={(extra?.rank ?? shown.rank) ? `#${extra?.rank ?? shown.rank}` : '—'} loading={loadingExtra && (extra?.rank ?? shown.rank) == null} />
+              <Stat icon={<Hash className="size-3.5" />} label="Popularity" value={(extra?.popularity ?? shown.popularity) ? `#${extra?.popularity ?? shown.popularity}` : '—'} loading={loadingExtra && (extra?.popularity ?? shown.popularity) == null} />
+              <Stat icon={<Users className="size-3.5" />} label="Members" value={compact(extra?.members ?? shown.members)} loading={loadingExtra && (extra?.members ?? shown.members) == null} />
             </div>
 
             {/* Next episode */}
@@ -200,25 +250,21 @@ export function DetailSheet() {
               </p>
             </div>
 
-            {/* Studios / Authors */}
-            {isManga
-              ? shown.authors &&
-                shown.authors.length > 0 && (
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    Author:{' '}
-                    <span className="text-foreground">
-                      {shown.authors.map((a) => a.name).join(', ')}
-                    </span>
-                  </p>
-                )
-              : shown.studios.length > 0 && (
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    Studio:{' '}
-                    <span className="text-foreground">
-                      {shown.studios.map((s) => s.name).join(', ')}
-                    </span>
-                  </p>
-                )}
+            {/* Studios / Authors (enriched from Jikan) */}
+            {(() => {
+              const authors = extra?.authors ?? shown.authors ?? []
+              const studios = extra?.studios ?? shown.studios ?? []
+              const list = isManga ? authors : studios
+              if (list.length === 0) return null
+              return (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  {isManga ? 'Author' : 'Studio'}:{' '}
+                  <span className="text-foreground">
+                    {list.map((x) => x.name).join(', ')}
+                  </span>
+                </p>
+              )
+            })()}
 
             {/* Watch / Read online */}
             <div className="mt-7 border-t border-line/60 pt-5">
@@ -250,7 +296,7 @@ export function DetailSheet() {
                   >
                     <Play className="size-4 shrink-0 fill-brand text-brand" />
                     <span className="flex-1">{src.name}</span>
-                    <StatusDot status={siteStatus[src.name]} />
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
                   </a>
                 ))}
               </div>
@@ -273,35 +319,17 @@ export function DetailSheet() {
   )
 }
 
-function StatusDot({ status }: { status?: SiteStatus }) {
-  const color =
-    status === 'up'
-      ? 'bg-green-500'
-      : status === 'down'
-        ? 'bg-red-500'
-        : 'bg-muted-foreground/50'
-  const label =
-    status === 'up' ? 'Online' : status === 'down' ? 'Down' : 'Checking…'
-  return (
-    <span
-      title={label}
-      className={cn(
-        'size-2 rounded-full',
-        color,
-        status === 'checking' && 'animate-pulse',
-      )}
-    />
-  )
-}
 
 function Stat({
   icon,
   label,
   value,
+  loading = false,
 }: {
   icon: React.ReactNode
   label: string
   value: string
+  loading?: boolean
 }) {
   return (
     <motion.div
@@ -313,9 +341,13 @@ function Stat({
         {icon}
         <span className="text-[10px] uppercase tracking-wide">{label}</span>
       </div>
-      <div className="mt-1 font-display text-sm font-bold text-foreground">
-        {value}
-      </div>
+      {loading ? (
+        <div className="mx-auto mt-1.5 h-4 w-10 rounded bg-line shimmer" />
+      ) : (
+        <div className="mt-1 font-display text-sm font-bold text-foreground">
+          {value}
+        </div>
+      )}
     </motion.div>
   )
 }

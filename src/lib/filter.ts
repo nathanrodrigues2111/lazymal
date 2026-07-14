@@ -33,6 +33,7 @@ export function filterAndSort(
   query: string,
   favorites: string[] = [],
   forYou = false,
+  starredIds: Set<number> = new Set(),
 ): Anime[] {
   const q = query.trim().toLowerCase()
   const filtered = anime.filter((a) => {
@@ -40,7 +41,9 @@ export function filterAndSort(
       genreIds.length === 0 ||
       genreIds.every((id) => a.genres.some((g) => g.mal_id === id))
     if (!matchGenre) return false
-    if (forYou && !isMatch(a, favorites)) return false
+    // For You = titles matching your taste OR ones you starred.
+    if (forYou && !isMatch(a, favorites) && !starredIds.has(a.mal_id))
+      return false
     if (!q) return true
     return (
       a.title.toLowerCase().includes(q) ||
@@ -78,8 +81,14 @@ export function filterAndSort(
       break
   }
 
-  // Surface the user's picks: stable-partition matches to the front (unless
-  // we're already showing matches only).
+  // In For You, starred titles always sit on top.
+  if (forYou && starredIds.size > 0) {
+    const star: Anime[] = []
+    const rest: Anime[] = []
+    for (const a of sorted) (starredIds.has(a.mal_id) ? star : rest).push(a)
+    return [...star, ...rest]
+  }
+  // Otherwise (not For You) surface taste matches to the front.
   if (favorites.length > 0 && !forYou) {
     const matched: Anime[] = []
     const rest: Anime[] = []

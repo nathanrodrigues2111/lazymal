@@ -90,6 +90,20 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Tailwind v4 no longer sets a pointer cursor on buttons — restore it for all
+   interactive elements. */
+button:not(:disabled),
+[role='button'],
+a[href],
+label,
+select,
+summary {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
 /* Ambient background glow, fixed behind everything */
 body::before {
   content: '';

@@ -71,6 +71,34 @@ function toCompactInt(s: string | null | undefined): number | null {
   return Math.round(n)
 }
 
+/** Upgrade a MAL thumbnail URL to full resolution: strip the `/r/WxH/` resize
+ * segment and the `?s=` cache-buster query. */
+function bigImage(url: string): string {
+  return url.replace(/\/r\/\d+x\d+\//, '/').replace(/\?.*$/, '')
+}
+
+/** Stable numeric id for a genre name (MAL's real ids aren't in the scraped
+ * HTML). Same name → same id, so dedup/filtering/React keys all work. */
+function gid(name: string): number {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0
+  return Math.abs(h) || 1
+}
+
+/** Decode HTML entities HTMLRewriter leaves in text. MAL often double-encodes
+ * (e.g. `&amp;#039;`), so `&amp;` is unwound first, then numeric/named. */
+function decode(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+}
+
 /** Fresh MalItem with every field defaulted; handlers fill in what they find. */
 function blankItem(): MalItem {
   return {
@@ -162,7 +190,7 @@ export async function scrapeSeason(
         }
       },
       text: textSink((v) => {
-        if (cur && !cur.title) cur.title = v.trim()
+        if (cur && !cur.title) cur.title = decode(v.trim())
       }),
     })
     // Cover image — MAL lazy-loads, so prefer data-src over src.
@@ -170,7 +198,7 @@ export async function scrapeSeason(
       element(el) {
         if (!cur) return
         const src = el.getAttribute('data-src') || el.getAttribute('src') || ''
-        if (src) cur.images = buildImages(src)
+        if (src) cur.images = buildImages(bigImage(src))
       },
     })
     // Score value (e.g. `8.45`; `N/A` → null).
@@ -195,17 +223,38 @@ export async function scrapeSeason(
     })
     // Genre anchors — no reliable id in the markup, so mal_id: 0 (frontend
     // matches genres by name).
+    // Genre anchors carry MAL's real id/type/url in the href
+    // (/{anime|manga}/genre/{id}/Name).
     .on('div.js-seasonal-anime .genre a', {
+      element(el) {
+        if (!cur) return
+        const href = el.getAttribute('href') || ''
+        const m = href.match(/\/(anime|manga)\/genre\/(\d+)/)
+        cur.genres.push({
+          mal_id: m ? parseInt(m[2], 10) : 0,
+          type: m ? m[1] : undefined,
+          name: '',
+          url: href
+            ? href.startsWith('http')
+              ? href
+              : `https://myanimelist.net${href}`
+            : undefined,
+        })
+      },
       text: textSink((v) => {
-        const name = v.trim()
-        if (cur && name) cur.genres.push({ mal_id: 0, name })
+        if (!cur || !cur.genres.length) return
+        const g = cur.genres[cur.genres.length - 1]
+        if (!g.name) {
+          g.name = decode(v.trim())
+          if (!g.mal_id) g.mal_id = gid(g.name)
+        }
       }),
     })
     // Synopsis — strip a trailing "[Written by ...]" credit.
     .on('div.js-seasonal-anime .synopsis .preline', {
       text: textSink((v) => {
         if (!cur || cur.synopsis) return
-        const s = v.replace(/\[Written by[^\]]*\]\s*$/i, '').trim()
+        const s = decode(v.replace(/\[Written by[^\]]*\]\s*$/i, '').trim())
         cur.synopsis = s || null
       }),
     })
@@ -213,6 +262,7 @@ export async function scrapeSeason(
     .arrayBuffer() // consume the stream so all handlers run
 
   const data = items.filter((it) => it.mal_id && it.title)
+  for (const it of data) it.genres = it.genres.filter((g) => g.name)
   return { data, pagination: { current_page: 1, has_next_page: false } }
 }
 
@@ -257,7 +307,7 @@ export async function scrapeTopManga(page: number): Promise<ListResponse> {
         }
       },
       text: textSink((v) => {
-        if (cur && !cur.title) cur.title = v.trim()
+        if (cur && !cur.title) cur.title = decode(v.trim())
       }),
     })
     // Cover thumbnail (small thumb is fine here) — data-src before src.
@@ -265,7 +315,7 @@ export async function scrapeTopManga(page: number): Promise<ListResponse> {
       element(el) {
         if (!cur) return
         const src = el.getAttribute('data-src') || el.getAttribute('src') || ''
-        if (src) cur.images = buildImages(src)
+        if (src) cur.images = buildImages(bigImage(src))
       },
     })
     // Score cell.
@@ -327,7 +377,7 @@ export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
     return { data: [], pagination: { current_page: page, has_next_page: false } }
   }
 
-  const url = 'https://myanimelist.net/manga/adapted?type=airing'
+  const url = 'https://myanimelist.net/manga/adapted?type=all'
   const res = await fetch(url, { headers: HEADERS })
   if (!res.ok) throw new Error(`MAL page responded ${res.status}`)
 
@@ -354,14 +404,14 @@ export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
         }
       },
       text: textSink((v) => {
-        if (cur && !cur.title) cur.title = v.trim()
+        if (cur && !cur.title) cur.title = decode(v.trim())
       }),
     })
     .on('div.js-seasonal-anime .image img', {
       element(el) {
         if (!cur) return
         const src = el.getAttribute('data-src') || el.getAttribute('src') || ''
-        if (src) cur.images = buildImages(src)
+        if (src) cur.images = buildImages(bigImage(src))
       },
     })
     .on('div.js-seasonal-anime .scormem-item.score', {
@@ -374,16 +424,37 @@ export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
         if (cur && cur.members === null) cur.members = toCompactInt(v)
       }),
     })
+    // Genre anchors carry MAL's real id/type/url in the href
+    // (/{anime|manga}/genre/{id}/Name).
     .on('div.js-seasonal-anime .genre a', {
+      element(el) {
+        if (!cur) return
+        const href = el.getAttribute('href') || ''
+        const m = href.match(/\/(anime|manga)\/genre\/(\d+)/)
+        cur.genres.push({
+          mal_id: m ? parseInt(m[2], 10) : 0,
+          type: m ? m[1] : undefined,
+          name: '',
+          url: href
+            ? href.startsWith('http')
+              ? href
+              : `https://myanimelist.net${href}`
+            : undefined,
+        })
+      },
       text: textSink((v) => {
-        const name = v.trim()
-        if (cur && name) cur.genres.push({ mal_id: 0, name })
+        if (!cur || !cur.genres.length) return
+        const g = cur.genres[cur.genres.length - 1]
+        if (!g.name) {
+          g.name = decode(v.trim())
+          if (!g.mal_id) g.mal_id = gid(g.name)
+        }
       }),
     })
     .on('div.js-seasonal-anime .synopsis .preline', {
       text: textSink((v) => {
         if (!cur || cur.synopsis) return
-        const s = v.replace(/\[Written by[^\]]*\]\s*$/i, '').trim()
+        const s = decode(v.replace(/\[Written by[^\]]*\]\s*$/i, '').trim())
         cur.synopsis = s || null
       }),
     })
@@ -396,6 +467,7 @@ export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
     it.chapters = null
     it.volumes = null
     it.authors = []
+    it.genres = it.genres.filter((g) => g.name)
   }
   return { data, pagination: { current_page: 1, has_next_page: false } }
 }

@@ -29,7 +29,7 @@ import {
   topAnimeOfficial,
   topMangaOfficial,
 } from './official'
-import { scrapeAdaptedManga, scrapeSeason, scrapeTopManga } from './scrape'
+import { scrapeAdaptedManga, scrapeSeason } from './scrape'
 import type { ListResponse } from './shape'
 
 export interface Env {
@@ -89,7 +89,6 @@ export default {
     const seg = url.pathname.split('/').filter(Boolean)
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1)
     const q = url.searchParams.get('q')?.trim()
-    const filter = url.searchParams.get('filter')
     const official = url.searchParams.get('source') === 'official'
     // Show everything by default; ?sfw=true drops adult entries.
     const sfw = url.searchParams.get('sfw') === 'true'
@@ -134,14 +133,14 @@ export default {
       }
       // ---- /top/... ----
       else if (seg[0] === 'top' && seg[1] === 'manga') {
-        // ?filter=publishing → currently-relevant (airing-adapted) manga.
+        // Official API (genres + rank + popularity + pagination) when a Client
+        // ID is set; otherwise scrape the airing-adapted list, which still has
+        // genres/score/members (unlike the bare top-manga ranking page).
         resp = json(
           clean(
-            official
+            official || env.MAL_CLIENT_ID
               ? await topMangaOfficial(page, key(env))
-              : filter === 'publishing'
-                ? await scrapeAdaptedManga(page)
-                : await scrapeTopManga(page),
+              : await scrapeAdaptedManga(page),
           ),
         )
       } else if (seg[0] === 'top' && seg[1] === 'anime') {

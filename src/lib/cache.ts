@@ -1,6 +1,6 @@
 import type { Anime } from './types'
 
-const PREFIX = 'lazymal-cache-v2:'
+const PREFIX = 'lazymal-cache-v3:'
 const TTL_MS = 1000 * 60 * 60 * 3 // 3 hours
 
 interface CacheEntry {
@@ -32,5 +32,28 @@ export function writeCache(key: string, data: Anime[]): void {
     localStorage.setItem(slot(key), JSON.stringify(entry))
   } catch {
     /* quota / disabled storage — ignore */
+  }
+}
+
+// --- single-item (detail) cache -------------------------------------------
+const DETAIL_TTL_MS = 1000 * 60 * 60 * 24 // 1 day; rank/popularity change slowly
+
+export function readDetail(key: string): Anime | null {
+  try {
+    const raw = localStorage.getItem(slot('d:' + key))
+    if (!raw) return null
+    const e = JSON.parse(raw) as { ts: number; data: Anime }
+    if (Date.now() - e.ts > DETAIL_TTL_MS) return null
+    return e.data
+  } catch {
+    return null
+  }
+}
+
+export function writeDetail(key: string, data: Anime): void {
+  try {
+    localStorage.setItem(slot('d:' + key), JSON.stringify({ ts: Date.now(), data }))
+  } catch {
+    /* ignore */
   }
 }
