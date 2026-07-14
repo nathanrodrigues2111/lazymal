@@ -35,15 +35,19 @@ export default function App() {
   const isManga = media === 'manga'
 
   // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
-  // Sakura spins only while scrolling *up* — accumulate rotation from upward
-  // scroll deltas, then run it through a soft spring so it glides smoothly.
+  // Sakura does one smooth full spin the moment the page scroll touches the
+  // top. Hysteresis (arm past 60px, fire at ≤2px) keeps it to one spin per
+  // touch and avoids jitter right at the edge.
   const { scrollY } = useScroll()
   const rotate = useMotionValue(0)
-  const lastY = useRef(0)
+  const armed = useRef(false)
   useMotionValueEvent(scrollY, 'change', (y) => {
-    const delta = y - lastY.current
-    lastY.current = y
-    if (delta < 0) rotate.set(rotate.get() - delta * 0.6)
+    if (y <= 2 && armed.current) {
+      armed.current = false
+      rotate.set(rotate.get() + 360)
+    } else if (y > 60) {
+      armed.current = true
+    }
   })
   const spin = useSpring(rotate, { stiffness: 45, damping: 15, mass: 0.6 })
 
