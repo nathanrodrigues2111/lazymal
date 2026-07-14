@@ -67,6 +67,12 @@ export function AnimeGrid() {
     return [...extras, ...listed]
   }, [forYou, listed, starredItems, media])
 
+  // If the For You tab empties out (e.g. you unstarred your last favorite),
+  // drop back to All automatically instead of showing a dead-end empty state.
+  useEffect(() => {
+    if (forYou && status === 'ready' && visible.length === 0) toggleForYou()
+  }, [forYou, status, visible.length, toggleForYou])
+
   // Live search: any query searches ALL anime/manga via the search endpoint
   // (not just the loaded season list), unless we're in the For You view.
   const [remote, setRemote] = useState<Anime[]>([])
