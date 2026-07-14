@@ -54,6 +54,7 @@ export function Onboarding() {
                 Skip
               </Button>
               <Button
+                variant={picks.length === 0 ? 'secondary' : 'default'}
                 className="flex-[2] rounded-full"
                 size="lg"
                 disabled={picks.length === 0}

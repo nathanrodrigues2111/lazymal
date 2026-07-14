@@ -22,15 +22,15 @@ export function GenrePicker({ selected, onToggle }: Props) {
             whileTap={{ scale: 0.95 }}
             onClick={() => onToggle(g.name)}
             className={cn(
-              'flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors',
+              'flex h-12 items-center gap-2 rounded-2xl border px-3 text-sm font-semibold leading-tight transition-colors',
               active
                 ? 'border-brand bg-brand/15 text-foreground'
                 : 'border-line bg-panel-2 text-muted-foreground hover:text-foreground',
             )}
           >
-            <span className="text-lg leading-none">{g.emoji}</span>
+            <span className="shrink-0 text-lg leading-none">{g.emoji}</span>
             <span className="flex-1 text-left">{g.name}</span>
-            {active && <Check className="size-4 text-brand" />}
+            {active && <Check className="size-4 shrink-0 text-brand" />}
           </motion.button>
         )
       })}

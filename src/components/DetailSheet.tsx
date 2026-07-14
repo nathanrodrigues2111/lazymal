@@ -147,29 +147,28 @@ export function DetailSheet() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {WATCH_SOURCES.map((src) => (
-                  <a
-                    key={src.name}
-                    href={src.build(shown.title)}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="flex items-center justify-between rounded-xl border border-line bg-panel-2 px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-brand/60 hover:bg-accent active:scale-[0.98]"
-                  >
-                    {src.name}
-                    <ExternalLink className="size-3.5 text-muted-foreground" />
-                  </a>
+                  <Button key={src.name} asChild className="rounded-full" size="lg">
+                    <a
+                      href={src.build({
+                        romaji: shown.title,
+                        english: shown.title_english,
+                      })}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      <Play className="size-4 fill-current" />
+                      {src.name}
+                    </a>
+                  </Button>
                 ))}
               </div>
-              <p className="mt-2 text-[11px] leading-snug text-muted-foreground/70">
-                Opens a search for this title on third-party sites. If one's
-                down, grab a fresh mirror from FMHY.
-              </p>
             </div>
 
             {/* Link out */}
             <Button
               asChild
               variant="secondary"
-              className="mt-4 w-full rounded-full"
+              className="mt-3 w-full rounded-full"
               size="lg"
             >
               <a href={shown.url} target="_blank" rel="noreferrer noopener">
