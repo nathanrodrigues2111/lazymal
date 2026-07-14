@@ -10,8 +10,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
  * upstream is slow/unavailable. Both are transient, so we retry a few times
  * with escalating backoff before surfacing an error to the UI.
  */
-async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const MAX = 6
+async function get<T>(
+  path: string,
+  signal?: AbortSignal,
+  maxAttempts = 6,
+): Promise<T> {
+  const MAX = maxAttempts
   let lastStatus = 0
   for (let attempt = 0; attempt < MAX; attempt++) {
     let res: Response
@@ -49,13 +53,45 @@ function dedupe(list: Anime[]): Anime[] {
   return list.filter((a) => !seen.has(a.mal_id) && seen.add(a.mal_id))
 }
 
+// Safety cap — no real season comes near this many pages (25 titles each).
+const MAX_PAGES = 15
+
 /**
- * Fetch the current season in a single request to the bare `/seasons/now`
- * endpoint. This is the most reliable Jikan cache key — the paginated
- * `?page=N` variants are separate cache entries that frequently 504.
+ * Fetch the ENTIRE current season by paging through `/seasons/now?page=N` so
+ * everything shows up. If a page fails we stop and keep what we have; if even
+ * the first page fails, we fall back to the bare `/seasons/now` endpoint, which
+ * is the most reliable Jikan cache key.
  */
 export async function fetchNow(signal?: AbortSignal): Promise<Anime[]> {
-  const res = await get<SeasonResponse>('/seasons/now', signal)
+  const all: Anime[] = []
+  const seen = new Set<number>()
+  let page = 1
+  let hasNext = true
+
+  while (hasNext && page <= MAX_PAGES) {
+    let res: SeasonResponse
+    try {
+      // Fewer retries per page so a flaky page fails fast instead of hanging.
+      res = await get<SeasonResponse>(`/seasons/now?page=${page}`, signal, 3)
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') throw e
+      break // stop paging; use whatever we've gathered so far
+    }
+    for (const a of res.data) {
+      if (!seen.has(a.mal_id)) {
+        seen.add(a.mal_id)
+        all.push(a)
+      }
+    }
+    hasNext = res.pagination.has_next_page
+    page += 1
+    if (hasNext) await sleep(600)
+  }
+
+  if (all.length > 0) return dedupe(all)
+
+  // Fallback: the reliable bare endpoint (more retries).
+  const res = await get<SeasonResponse>('/seasons/now', signal, 6)
   return dedupe(res.data)
 }
 

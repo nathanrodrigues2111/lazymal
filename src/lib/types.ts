@@ -57,4 +57,10 @@ export interface SeasonResponse {
   pagination: JikanPagination
 }
 
-export type SortKey = 'score' | 'popularity' | 'members' | 'title' | 'newest'
+export type SortKey =
+  | 'airing'
+  | 'score'
+  | 'popularity'
+  | 'members'
+  | 'title'
+  | 'newest'

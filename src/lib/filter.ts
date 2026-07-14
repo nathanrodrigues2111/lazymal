@@ -1,5 +1,6 @@
 import type { Anime, Genre, SortKey } from './types'
 import { matchScore } from './genres'
+import { nextAiring } from './airing'
 
 /** Tags an anime is matched against for "For You" (genres + themes). */
 export function animeTags(a: Anime): { name: string }[] {
@@ -49,6 +50,14 @@ export function filterAndSort(
 
   const sorted = [...filtered]
   switch (sort) {
+    case 'airing': {
+      // Soonest upcoming episode first; anything without a schedule sinks.
+      const at = new Map<number, number>()
+      for (const a of sorted)
+        at.set(a.mal_id, nextAiring(a)?.getTime() ?? Infinity)
+      sorted.sort((a, b) => at.get(a.mal_id)! - at.get(b.mal_id)!)
+      break
+    }
     case 'score':
       sorted.sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       break
@@ -81,6 +90,7 @@ export function filterAndSort(
 }
 
 export const SORT_LABELS: Record<SortKey, string> = {
+  airing: 'Airing soon',
   score: 'Top rated',
   popularity: 'Most popular',
   members: 'Most members',

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Anime, Season, SortKey } from '../lib/types'
 import { fetchNow, fetchSeason } from '../lib/jikan'
 import { currentSeason, sameSeason } from '../lib/season'
+import { readCache, writeCache } from '../lib/cache'
 
 interface StoreState {
   season: Season
@@ -43,18 +44,26 @@ export const useStore = create<StoreState>((set, get) => ({
     controller?.abort()
     controller = new AbortController()
     const { season } = get()
-    set({ status: 'loading', anime: [] })
+    const isNow = sameSeason(season, currentSeason())
+
+    // Show cached titles instantly (stale-while-revalidate) so the grid never
+    // blanks out, even if the API is 504-ing.
+    const cached = isNow ? readCache('now') : null
+    if (cached) set({ anime: cached.data, status: 'ready' })
+    else set({ status: 'loading', anime: [] })
+
     try {
-      // Fetch every page first, then render once — avoids the grid re-sorting
-      // and shifting as pages stream in.
-      const anime = sameSeason(season, currentSeason())
+      const anime = isNow
         ? await fetchNow(controller.signal)
         : await fetchSeason(season, controller.signal)
       if (id !== requestId) return
+      if (isNow) writeCache('now', anime)
+      // Update to the full fresh list once (single reflow, no per-page shifting).
       set({ anime, status: 'ready' })
     } catch (e) {
       if (id !== requestId || (e as Error).name === 'AbortError') return
-      set({ status: 'error' })
+      // Keep showing cached data on failure; only error if we have nothing.
+      if (!cached) set({ status: 'error' })
     }
   },
 
