@@ -620,3 +620,102 @@ export async function scrapeDetail(
 
   return it
 }
+
+// --- search scraper --------------------------------------------------------
+
+/**
+ * Scrape `/{anime|manga}.php` search results, which paginate 50 rows at a time
+ * via `?show=` (an offset, not a page number).
+ *
+ * Results render as a table whose rows mix a cover-image cell and a title cell.
+ * HTMLRewriter is awkward for reading across these sibling cells, so we regex
+ * the raw HTML — the same approach the detail scraper uses. Each row's title
+ * lives in the first `a.hoverinfo_trigger`; a second such anchor (the image
+ * link) has empty text, so we skip empties and de-dupe by id.
+ */
+export async function scrapeSearch(
+  media: 'anime' | 'manga',
+  q: string,
+  page: number,
+): Promise<ListResponse> {
+  const url = `https://myanimelist.net/${media}.php?q=${encodeURIComponent(q)}&cat=${media}&show=${(page - 1) * 50}`
+  const res = await fetch(url, { headers: HEADERS })
+  if (!res.ok) throw new Error(`MAL page responded ${res.status}`)
+  const html = await res.text()
+
+  const data: MalItem[] = []
+  const seen = new Set<number>()
+
+  try {
+    // Each result row starts with the poster's image anchor (picSurround),
+    // whose href carries the id. Slicing between consecutive image anchors
+    // yields exactly one row's HTML (image → title → synopsis → columns).
+    const rowRe = new RegExp(
+      `<a\\s+class="hoverinfo_trigger"\\s+href="https://myanimelist\\.net/${media}/(\\d+)/`,
+      'g',
+    )
+    const anchors = [...html.matchAll(rowRe)]
+
+    for (let i = 0; i < anchors.length; i++) {
+      const id = parseInt(anchors[i][1], 10)
+      if (!id || seen.has(id)) continue
+
+      const start = anchors[i].index ?? 0
+      const end = anchors[i + 1]?.index ?? html.length
+      const slice = html.slice(start, end)
+
+      // Title lives in the row's <strong> (inside the fw-b title anchor).
+      const title = slice.match(/<strong>([^<]+)<\/strong>/)?.[1]?.trim()
+      if (!title) continue
+
+      const it = blankItem()
+      it.mal_id = id
+      it.url = `https://myanimelist.net/${media}/${id}`
+      it.title = decode(title)
+
+      // Cover image (lazy-loaded via data-src, an r/WxH resize thumb).
+      const img = slice.match(
+        /data-src="(https:\/\/cdn\.myanimelist\.net\/[^"]+?\/images\/(?:anime|manga)\/\d+\/\d+\.[a-z]+)[^"]*"/i,
+      )?.[1]
+      if (img) it.images = buildImages(bigImage(img))
+
+      // Synopsis preview (truncated on the page; strip the trailing ellipsis).
+      const syn = slice.match(/<div class="pt4">([\s\S]*?)(?:<a\b|<\/div>)/)?.[1]
+      if (syn)
+        it.synopsis =
+          decode(syn.replace(/\s+/g, ' ').trim()).replace(/\.{2,}$/, '') || null
+
+      // Right-hand columns (class "… ac …"): type, episodes/chapters, score —
+      // classified by shape since column order varies between anime and manga.
+      const cells = [
+        ...slice.matchAll(
+          /<td class="[^"]*\bac\b[^"]*"[^>]*>\s*([^<]+?)\s*<\/td>/g,
+        ),
+      ].map((c) => c[1].trim())
+      for (const c of cells) {
+        if (/^\d+(\.\d+)?$/.test(c) && c.includes('.')) it.score = toScore(c)
+        else if (/^\d+$/.test(c)) {
+          const n = toInt(c)
+          if (media === 'manga') it.chapters = n
+          else it.episodes = n
+        } else if (!it.type && /[A-Za-z]/.test(c)) it.type = c
+      }
+
+      // Mark manga so the frontend renders it in manga mode.
+      if (media === 'manga' && it.chapters === undefined) it.chapters = null
+
+      seen.add(id)
+      data.push(it)
+    }
+  } catch {
+    // Return whatever we managed to gather.
+  }
+
+  return {
+    data,
+    pagination: {
+      current_page: page,
+      has_next_page: data.length >= 50,
+    },
+  }
+}

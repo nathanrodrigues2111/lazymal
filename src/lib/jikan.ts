@@ -143,6 +143,29 @@ export async function fetchDetails(
   return cached ?? (await fresh)
 }
 
+/**
+ * Live search for titles not in the current list. Hits the worker's search
+ * endpoint (falls back to Jikan). Returns up to ~25 matches.
+ */
+export async function searchTitles(
+  q: string,
+  media: 'anime' | 'manga',
+  signal?: AbortSignal,
+): Promise<Anime[]> {
+  const query = q.trim()
+  if (!query) return []
+  try {
+    const res = await get<SeasonResponse>(
+      `/${media}?q=${encodeURIComponent(query)}&limit=24`,
+      signal,
+      3,
+    )
+    return dedupe(res.data)
+  } catch {
+    return []
+  }
+}
+
 /** A specific season (single request, like fetchNow). */
 export async function fetchSeason(
   { year, season }: Season,

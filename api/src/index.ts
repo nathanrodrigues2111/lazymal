@@ -29,7 +29,12 @@ import {
   topAnimeOfficial,
   topMangaOfficial,
 } from './official'
-import { scrapeAdaptedManga, scrapeDetail, scrapeSeason } from './scrape'
+import {
+  scrapeAdaptedManga,
+  scrapeDetail,
+  scrapeSearch,
+  scrapeSeason,
+} from './scrape'
 import type { ListResponse } from './shape'
 
 export interface Env {
@@ -146,11 +151,18 @@ export default {
       } else if (seg[0] === 'top' && seg[1] === 'anime') {
         resp = json(clean(await topAnimeOfficial(page, key(env))))
       }
-      // ---- search: /anime?q= , /manga?q= (official) ----
-      else if (seg[0] === 'anime' && q && seg.length === 1) {
-        resp = json(clean(await searchAnimeOfficial(q, page, key(env))))
-      } else if (seg[0] === 'manga' && q && seg.length === 1) {
-        resp = json(clean(await searchMangaOfficial(q, page, key(env))))
+      // ---- search: /anime?q= , /manga?q= (scrape, or official with a key) ----
+      else if ((seg[0] === 'anime' || seg[0] === 'manga') && q && seg.length === 1) {
+        const m = seg[0] as 'anime' | 'manga'
+        resp = json(
+          clean(
+            env.MAL_CLIENT_ID
+              ? m === 'anime'
+                ? await searchAnimeOfficial(q, page, env.MAL_CLIENT_ID)
+                : await searchMangaOfficial(q, page, env.MAL_CLIENT_ID)
+              : await scrapeSearch(m, q, page),
+          ),
+        )
       }
       // ---- details: /anime/{id}[/full] , /manga/{id}[/full] ----
       // Official API when a key is set; otherwise scrape the MAL detail page

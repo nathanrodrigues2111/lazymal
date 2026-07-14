@@ -76,7 +76,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
         aria-label={starred ? 'Remove from favorites' : 'Add to favorites'}
         onClick={(e) => {
           e.stopPropagation()
-          toggleStar(key)
+          toggleStar(media, anime)
         }}
         className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/55 backdrop-blur-md transition-transform hover:scale-110 active:scale-90"
       >

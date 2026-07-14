@@ -114,7 +114,7 @@ export function DetailSheet() {
                     {shown.title_english || shown.title}
                   </DrawerTitle>
                   <button
-                    onClick={() => toggleStar(starKey)}
+                    onClick={() => shown && toggleStar(media, shown)}
                     aria-label={
                       starred ? 'Remove from favorites' : 'Add to favorites'
                     }
