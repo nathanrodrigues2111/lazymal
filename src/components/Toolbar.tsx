@@ -46,7 +46,7 @@ export function Toolbar() {
       <Button
         variant="secondary"
         size="icon"
-        className="rounded-full"
+        className="hidden rounded-full md:inline-flex"
         aria-label="Refresh"
         onClick={refresh}
       >
