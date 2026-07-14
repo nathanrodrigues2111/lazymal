@@ -30,6 +30,12 @@ export const WATCH_SOURCES: WatchSource[] = [
     build: ({ romaji, english }) =>
       `https://anikototv.to/filter?keyword=${enc(english || romaji)}`,
   },
+  {
+    name: 'KickAssAnime',
+    home: 'https://kaa.lt',
+    build: ({ romaji, english }) =>
+      `https://kaa.lt/search?q=${enc(english || romaji)}`,
+  },
 ]
 
 /** Manga readers for the "Read online" launcher. */
