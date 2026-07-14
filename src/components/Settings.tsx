@@ -1,5 +1,3 @@
-import { Trash2 } from 'lucide-react'
-
 import { usePrefs } from '@/store/usePrefs'
 import { GenrePicker } from '@/components/GenrePicker'
 import { Button } from '@/components/ui/button'
@@ -18,8 +16,6 @@ interface Props {
 export function Settings({ open, onOpenChange }: Props) {
   const genres = usePrefs((s) => s.genres)
   const setGenres = usePrefs((s) => s.setGenres)
-  const starredCount = usePrefs((s) => s.starred.length)
-  const clearStars = usePrefs((s) => s.clearStars)
 
   const toggle = (name: string) =>
     setGenres(
@@ -42,20 +38,9 @@ export function Settings({ open, onOpenChange }: Props) {
             <GenrePicker selected={genres} onToggle={toggle} />
           </div>
 
-          <div className="mt-6 flex gap-3">
-            {starredCount > 0 && (
-              <Button
-                variant="secondary"
-                size="lg"
-                className="flex-1 rounded-full"
-                onClick={clearStars}
-              >
-                <Trash2 className="size-4" />
-                Clear favorites ({starredCount})
-              </Button>
-            )}
+          <div className="mt-6">
             <Button
-              className="flex-[2] rounded-full"
+              className="w-full rounded-full"
               size="lg"
               onClick={() => onOpenChange(false)}
             >
