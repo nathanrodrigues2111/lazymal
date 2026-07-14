@@ -1,0 +1,39 @@
+import { motion } from 'motion/react'
+import { Check } from 'lucide-react'
+
+import { QUIZ_GENRES } from '@/lib/genres'
+import { cn } from '@/lib/utils'
+
+interface Props {
+  selected: string[]
+  onToggle: (name: string) => void
+}
+
+/** A grid of tappable genre chips used by both onboarding and settings. */
+export function GenrePicker({ selected, onToggle }: Props) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {QUIZ_GENRES.map((g) => {
+        const active = selected.includes(g.name)
+        return (
+          <motion.button
+            key={g.name}
+            type="button"
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onToggle(g.name)}
+            className={cn(
+              'flex items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors',
+              active
+                ? 'border-brand bg-brand/15 text-foreground'
+                : 'border-line bg-panel-2 text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <span className="text-lg leading-none">{g.emoji}</span>
+            <span className="flex-1 text-left">{g.name}</span>
+            {active && <Check className="size-4 text-brand" />}
+          </motion.button>
+        )
+      })}
+    </div>
+  )
+}
