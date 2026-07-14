@@ -180,9 +180,9 @@ function Empty({
       <img
         src={`${import.meta.env.BASE_URL}empty.gif`}
         alt="Nothing found"
-        width={498}
-        height={498}
-        className="h-auto w-40 rounded-2xl object-contain drop-shadow-[0_8px_24px_rgba(255,77,109,0.25)]"
+        width={200}
+        height={240}
+        className="h-auto w-32 drop-shadow-[0_8px_24px_rgba(255,77,109,0.25)]"
       />
       <div>
         <p className="font-display text-lg font-bold text-foreground">{title}</p>
