@@ -36,6 +36,12 @@ export const WATCH_SOURCES: WatchSource[] = [
     build: ({ romaji, english }) =>
       `https://kaa.lt/search?q=${enc(english || romaji)}`,
   },
+  {
+    name: 'Enma',
+    home: 'https://www.enma.lol',
+    build: ({ romaji, english }) =>
+      `https://www.enma.lol/search?keyword=${enc(english || romaji)}`,
+  },
 ]
 
 /** Manga readers for the "Read online" launcher. */
