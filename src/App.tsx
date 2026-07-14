@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AnimatePresence,
   motion,
+  useMotionValue,
+  useMotionValueEvent,
   useScroll,
   useSpring,
-  useTransform,
 } from 'motion/react'
 
 import { useStore } from '@/store/useStore'
@@ -34,11 +35,17 @@ export default function App() {
   const isManga = media === 'manga'
 
   // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
+  // Sakura spins only while scrolling *up* — accumulate rotation from upward
+  // scroll deltas, then run it through a soft spring so it glides smoothly.
   const { scrollY } = useScroll()
-  // One gentle spin within the top ~280px, then it holds — no spinning deep
-  // down the page.
-  const spinTarget = useTransform(scrollY, [0, 280], [0, 360], { clamp: true })
-  const spin = useSpring(spinTarget, { stiffness: 80, damping: 18, mass: 0.4 })
+  const rotate = useMotionValue(0)
+  const lastY = useRef(0)
+  useMotionValueEvent(scrollY, 'change', (y) => {
+    const delta = y - lastY.current
+    lastY.current = y
+    if (delta < 0) rotate.set(rotate.get() - delta * 0.6)
+  })
+  const spin = useSpring(rotate, { stiffness: 45, damping: 15, mass: 0.6 })
 
   // Load the current media on mount, then warm the other mode's cache in the
   // background so toggling Anime/Manga is instant.
