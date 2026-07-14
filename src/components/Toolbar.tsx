@@ -16,19 +16,17 @@ export function Toolbar() {
   const setQuery = useStore((s) => s.setQuery)
   const sort = useStore((s) => s.sort)
   const setSort = useStore((s) => s.setSort)
-  const load = useStore((s) => s.load)
+  const refresh = useStore((s) => s.refresh)
   const media = useStore((s) => s.media)
   const [open, setOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
-  const refresh = async () => {
+  const doRefresh = async () => {
     if (refreshing) return
     setRefreshing(true)
-    try {
-      await load()
-    } finally {
-      setRefreshing(false)
-    }
+    // Keep the spinner up for at least ~1s even if the refresh is instant.
+    await Promise.all([refresh(), new Promise((r) => setTimeout(r, 1000))])
+    setRefreshing(false)
   }
 
   return (
@@ -49,7 +47,7 @@ export function Toolbar() {
         size="icon"
         className="hidden rounded-full md:inline-flex"
         aria-label="Refresh"
-        onClick={refresh}
+        onClick={doRefresh}
       >
         <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} />
       </Button>

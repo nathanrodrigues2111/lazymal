@@ -12,11 +12,13 @@ import { Settings } from '@/components/Settings'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { MediaToggle } from '@/components/MediaToggle'
 import { SwipeNav } from '@/components/SwipeNav'
+import { Toast } from '@/components/Toast'
 
 const SEASON = currentSeason()
 
 export default function App() {
   const load = useStore((s) => s.load)
+  const refresh = useStore((s) => s.refresh)
   const prewarmOther = useStore((s) => s.prewarmOther)
   const media = useStore((s) => s.media)
   const detailOpen = useStore((s) => s.selected !== null)
@@ -37,9 +39,15 @@ export default function App() {
   // drag gestures don't trigger a refresh.
   const sheetOpen = detailOpen || settingsOpen || !onboarded
 
+  // Pull-to-refresh: re-fetch (+toast), held for ~1s so the gesture reads as a
+  // real refresh even when the network is instant.
+  const pullRefresh = async () => {
+    await Promise.all([refresh(), new Promise((r) => setTimeout(r, 1000))])
+  }
+
   return (
     <>
-      <PullToRefresh onRefresh={load} disabled={sheetOpen}>
+      <PullToRefresh onRefresh={pullRefresh} disabled={sheetOpen}>
         <div className="mx-auto flex min-h-svh w-full max-w-[540px] flex-col md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
           {/* Sticky control deck */}
           <header className="sticky top-0 z-10 space-y-3 border-b border-line/70 bg-ink/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl md:px-6">
@@ -97,6 +105,7 @@ export default function App() {
       <DetailSheet />
       <Settings open={settingsOpen} onOpenChange={setSettingsOpen} />
       <Onboarding />
+      <Toast />
     </>
   )
 }

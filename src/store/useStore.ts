@@ -9,6 +9,8 @@ interface StoreState {
   season: Season
   anime: Anime[]
   status: 'idle' | 'loading' | 'ready' | 'error'
+  /** Transient toast message shown at the bottom (null = hidden). */
+  toast: string | null
 
   genreIds: number[]
   sort: SortKey
@@ -17,6 +19,9 @@ interface StoreState {
   selected: Anime | null
 
   load: () => Promise<void>
+  /** Re-fetch the current list and confirm with a toast (user-triggered). */
+  refresh: () => Promise<void>
+  showToast: (message: string) => void
   /** Warm the OTHER media's cache in the background so toggling is instant. */
   prewarmOther: () => Promise<void>
   setMedia: (media: Media) => void
@@ -31,12 +36,14 @@ interface StoreState {
 // Token so stale responses are dropped when the user switches seasons quickly.
 let requestId = 0
 let controller: AbortController | null = null
+let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 export const useStore = create<StoreState>((set, get) => ({
   media: 'anime',
   season: currentSeason(),
   anime: [],
   status: 'idle',
+  toast: null,
 
   genreIds: [],
   sort: 'score',
@@ -75,6 +82,18 @@ export const useStore = create<StoreState>((set, get) => ({
       // Keep showing cached data on failure; only error if we have nothing.
       if (!cached) set({ status: 'error' })
     }
+  },
+
+  refresh: async () => {
+    await get().load()
+    if (get().status === 'error') get().showToast("Couldn't refresh — try again")
+    else get().showToast(`Refreshed · ${get().anime.length} titles`)
+  },
+
+  showToast: (message) => {
+    set({ toast: message })
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => set({ toast: null }), 2200)
   },
 
   prewarmOther: async () => {

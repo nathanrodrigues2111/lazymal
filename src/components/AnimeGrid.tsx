@@ -67,7 +67,11 @@ export function AnimeGrid() {
         <Empty
           crying={false}
           title="Nothing here~"
-          body={`No ${media} match those filters. Try clearing them or searching something else!`}
+          body={
+            query.trim()
+              ? `No ${media} named that in this list — use the source buttons above to search it on the streaming/reading sites.`
+              : `No ${media} match those filters. Try clearing them or searching something else!`
+          }
         />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 xl:grid-cols-6">
