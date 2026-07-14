@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'motion/react'
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
@@ -26,6 +32,11 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const isManga = media === 'manga'
+
+  // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
+  const { scrollY } = useScroll()
+  const spinTarget = useTransform(scrollY, (v) => v * 0.5)
+  const spin = useSpring(spinTarget, { stiffness: 80, damping: 18, mass: 0.4 })
 
   // Load the current media on mount, then warm the other mode's cache in the
   // background so toggling Anime/Manga is instant.
@@ -58,17 +69,22 @@ export default function App() {
                   aria-label="Open settings"
                   className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand/10 text-2xl transition-transform active:scale-90"
                 >
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={isManga ? 'manga' : 'anime'}
-                      initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    >
-                      {isManga ? '📖' : '🌸'}
-                    </motion.span>
-                  </AnimatePresence>
+                  <motion.span
+                    style={{ rotate: isManga ? 0 : spin }}
+                    className="grid place-items-center"
+                  >
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={isManga ? 'manga' : 'anime'}
+                        initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
+                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      >
+                        {isManga ? '📖' : '🌸'}
+                      </motion.span>
+                    </AnimatePresence>
+                  </motion.span>
                 </button>
                 <div className="leading-tight">
                   <AnimatePresence mode="wait" initial={false}>

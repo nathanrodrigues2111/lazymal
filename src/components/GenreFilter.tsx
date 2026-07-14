@@ -65,15 +65,14 @@ function Chip({
   return (
     <motion.button
       layout
-      initial={{ opacity: 0, y: 8, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{
-        delay: Math.min(index * 0.02, 0.25),
-        type: 'spring',
-        stiffness: 500,
-        damping: 30,
+        duration: 0.4,
+        delay: Math.min(index * 0.03, 0.4),
+        ease: [0.22, 1, 0.36, 1],
       }}
-      whileTap={{ scale: 0.92 }}
+      whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={cn(
         'flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200',
