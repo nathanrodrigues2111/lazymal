@@ -1,32 +1,34 @@
 import type { Anime, Season, SeasonResponse } from './types'
 
-// Point this at a self-hosted LazyMAL API worker via VITE_API_BASE (see /api),
-// otherwise fall back to the public Jikan API.
-const BASE = import.meta.env.VITE_API_BASE || 'https://api.jikan.moe/v4'
+// Our self-hosted LazyMAL API worker is primary; the public Jikan API is the
+// backup if the worker is ever unreachable. Override the primary via
+// VITE_API_BASE.
+const PRIMARY =
+  import.meta.env.VITE_API_BASE ||
+  'https://lazymal-api.lazyneilmedia.workers.dev'
+const FALLBACK = 'https://api.jikan.moe/v4'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /**
- * Fetch wrapper with backoff retries. Jikan proxies MyAnimeList, so it both
- * rate-limits (429, ~3 req/s) and intermittently returns 5xx when MAL's
- * upstream is slow/unavailable. Both are transient, so we retry a few times
- * with escalating backoff before surfacing an error to the UI.
+ * Fetch one base with backoff retries. Sources both rate-limit (429) and
+ * intermittently 5xx when MAL's upstream is slow, so we retry a few times with
+ * escalating backoff before giving up on this base.
  */
-async function get<T>(
+async function fetchBase<T>(
+  base: string,
   path: string,
-  signal?: AbortSignal,
-  maxAttempts = 6,
+  signal: AbortSignal | undefined,
+  maxAttempts: number,
 ): Promise<T> {
-  const MAX = maxAttempts
   let lastStatus = 0
-  for (let attempt = 0; attempt < MAX; attempt++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     let res: Response
     try {
-      res = await fetch(`${BASE}${path}`, { signal })
+      res = await fetch(`${base}${path}`, { signal })
     } catch (err) {
       if ((err as Error).name === 'AbortError') throw err
-      // Network hiccup — back off and retry.
-      if (attempt < MAX - 1) {
+      if (attempt < maxAttempts - 1) {
         await sleep(600 * (attempt + 1))
         continue
       }
@@ -34,14 +36,28 @@ async function get<T>(
     }
     if (res.ok) return (await res.json()) as T
     lastStatus = res.status
-    // 429 = rate limited, 5xx = MAL upstream flaky — both worth retrying.
-    if ((res.status === 429 || res.status >= 500) && attempt < MAX - 1) {
+    if ((res.status === 429 || res.status >= 500) && attempt < maxAttempts - 1) {
       await sleep(res.status === 429 ? 1200 : 700 * (attempt + 1))
       continue
     }
-    throw new Error(`Jikan ${res.status} on ${path}`)
+    throw new Error(`${base} ${res.status} on ${path}`)
   }
-  throw new Error(`Jikan unavailable (${lastStatus}) on ${path}`)
+  throw new Error(`${base} unavailable (${lastStatus}) on ${path}`)
+}
+
+/** Try our worker first; if it fails entirely, fall back to Jikan. */
+async function get<T>(
+  path: string,
+  signal?: AbortSignal,
+  maxAttempts = 6,
+): Promise<T> {
+  try {
+    return await fetchBase<T>(PRIMARY, path, signal, maxAttempts)
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') throw err
+    // Worker down/unreachable — try the Jikan backup.
+    return await fetchBase<T>(FALLBACK, path, signal, Math.min(maxAttempts, 4))
+  }
 }
 
 /**
@@ -110,8 +126,8 @@ export async function fetchSeason(
 }
 
 /**
- * Top manga (manga has no "season"). Pages through /top/manga, keeping partial
- * results on failure and falling back to the first page.
+ * Top manga (manga has no "season"). Pages through /top/manga so the whole
+ * ranking loads, keeping partial results if a later page fails.
  */
 export async function fetchManga(signal?: AbortSignal): Promise<Anime[]> {
   const all: Anime[] = []
@@ -122,15 +138,10 @@ export async function fetchManga(signal?: AbortSignal): Promise<Anime[]> {
   while (hasNext && page <= MAX_PAGES) {
     let res: SeasonResponse
     try {
-      // Primary: currently-publishing manga.
-      res = await get<SeasonResponse>(
-        `/top/manga?filter=publishing&page=${page}`,
-        signal,
-        3,
-      )
+      res = await get<SeasonResponse>(`/top/manga?page=${page}`, signal, 3)
     } catch (e) {
       if ((e as Error).name === 'AbortError') throw e
-      break
+      break // stop paging; use whatever we've gathered so far
     }
     for (const a of res.data) {
       if (!seen.has(a.mal_id)) {
@@ -145,7 +156,6 @@ export async function fetchManga(signal?: AbortSignal): Promise<Anime[]> {
 
   if (all.length > 0) return dedupe(all)
 
-  // Backup: bare /top/manga (the reliable cache key).
   const res = await get<SeasonResponse>('/top/manga', signal, 6)
   return dedupe(res.data)
 }
