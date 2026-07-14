@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
-import { currentSeason, seasonEmoji, seasonLabel } from '@/lib/season'
+import { currentSeason, seasonLabel } from '@/lib/season'
 import { Toolbar } from '@/components/Toolbar'
 import { AnimeGrid } from '@/components/AnimeGrid'
 import { DetailSheet } from '@/components/DetailSheet'
@@ -66,7 +66,7 @@ export default function App() {
                       exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     >
-                      {isManga ? '📖' : seasonEmoji(SEASON.season)}
+                      {isManga ? '📖' : '🌸'}
                     </motion.span>
                   </AnimatePresence>
                 </button>
