@@ -178,11 +178,11 @@ function Empty({
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
       <img
-        src={`${import.meta.env.BASE_URL}404.gif`}
+        src={`${import.meta.env.BASE_URL}empty.gif`}
         alt="Nothing found"
-        width={128}
-        height={126}
-        className="h-28 w-28 rounded-2xl object-contain drop-shadow-[0_8px_24px_rgba(255,77,109,0.25)]"
+        width={498}
+        height={498}
+        className="h-auto w-40 rounded-2xl object-contain drop-shadow-[0_8px_24px_rgba(255,77,109,0.25)]"
       />
       <div>
         <p className="font-display text-lg font-bold text-foreground">{title}</p>
