@@ -85,7 +85,13 @@ export function DetailSheet() {
     (shown.publishing !== undefined ||
       shown.chapters !== undefined ||
       shown.volumes !== undefined)
-  const sources = isManga ? READ_SOURCES : WATCH_SOURCES
+  // Online sources first, offline pushed to the bottom (stable within a group).
+  const statusRank: Record<SiteStatus, number> = { up: 0, checking: 1, down: 2 }
+  const sources = [...(isManga ? READ_SOURCES : WATCH_SOURCES)].sort(
+    (a, b) =>
+      statusRank[siteStatus[a.name] ?? 'checking'] -
+      statusRank[siteStatus[b.name] ?? 'checking'],
+  )
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && select(null)}>

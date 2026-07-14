@@ -64,12 +64,6 @@ export const READ_SOURCES: WatchSource[] = [
     build: ({ english, romaji }) =>
       `https://mangadex.org/search?q=${enc(english || romaji)}`,
   },
-  {
-    name: 'Comick',
-    home: 'https://comick.io',
-    build: ({ english, romaji }) =>
-      `https://comick.io/search?q=${enc(english || romaji)}`,
-  },
 ]
 
 export type SiteStatus = 'checking' | 'up' | 'down'
