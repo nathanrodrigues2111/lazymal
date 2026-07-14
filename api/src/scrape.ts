@@ -377,7 +377,7 @@ export async function scrapeAdaptedManga(page: number): Promise<ListResponse> {
     return { data: [], pagination: { current_page: page, has_next_page: false } }
   }
 
-  const url = 'https://myanimelist.net/manga/adapted?type=all'
+  const url = 'https://myanimelist.net/manga/adapted?type=airing'
   const res = await fetch(url, { headers: HEADERS })
   if (!res.ok) throw new Error(`MAL page responded ${res.status}`)
 
