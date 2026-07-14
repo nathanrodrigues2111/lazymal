@@ -14,7 +14,7 @@ export default function App() {
   const load = useStore((s) => s.load)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  // Load the whole current season once on mount.
+  // Load the current season once on mount.
   useEffect(() => {
     void load()
   }, [load])

@@ -1,4 +1,4 @@
-import type { Anime, SeasonResponse } from './types'
+import type { Anime, Season, SeasonResponse } from './types'
 
 const BASE = 'https://api.jikan.moe/v4'
 
@@ -42,10 +42,26 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
  * Fetch the current season in a single request — one simple query, no paging.
  * Returns the season's anime list (retries transient 429/5xx internally).
  */
+// MAL occasionally lists the same title twice (e.g. dual entries); de-dupe by
+// mal_id so React keys stay unique.
+function dedupe(list: Anime[]): Anime[] {
+  const seen = new Set<number>()
+  return list.filter((a) => !seen.has(a.mal_id) && seen.add(a.mal_id))
+}
+
 export async function fetchNow(signal?: AbortSignal): Promise<Anime[]> {
   const res = await get<SeasonResponse>('/seasons/now', signal)
-  // MAL occasionally lists the same title twice (e.g. dual entries); de-dupe
-  // by mal_id so React keys stay unique.
-  const seen = new Set<number>()
-  return res.data.filter((a) => !seen.has(a.mal_id) && seen.add(a.mal_id))
+  return dedupe(res.data)
+}
+
+/** A specific season (single request, like fetchNow). */
+export async function fetchSeason(
+  { year, season }: Season,
+  signal?: AbortSignal,
+): Promise<Anime[]> {
+  const res = await get<SeasonResponse>(
+    `/seasons/${year}/${season}?sfw=true`,
+    signal,
+  )
+  return dedupe(res.data)
 }

@@ -1,8 +1,10 @@
 import { create } from 'zustand'
-import type { Anime, SortKey } from '../lib/types'
-import { fetchNow } from '../lib/jikan'
+import type { Anime, Season, SortKey } from '../lib/types'
+import { fetchNow, fetchSeason } from '../lib/jikan'
+import { currentSeason, sameSeason } from '../lib/season'
 
 interface StoreState {
+  season: Season
   anime: Anime[]
   status: 'idle' | 'loading' | 'ready' | 'error'
 
@@ -13,6 +15,7 @@ interface StoreState {
   selected: Anime | null
 
   load: () => Promise<void>
+  setSeason: (season: Season) => void
   toggleGenre: (id: number) => void
   clearGenres: () => void
   setSort: (sort: SortKey) => void
@@ -20,9 +23,12 @@ interface StoreState {
   select: (anime: Anime | null) => void
 }
 
+// Token so stale responses are dropped when the user switches seasons quickly.
+let requestId = 0
 let controller: AbortController | null = null
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<StoreState>((set, get) => ({
+  season: currentSeason(),
   anime: [],
   status: 'idle',
 
@@ -33,16 +39,27 @@ export const useStore = create<StoreState>((set) => ({
   selected: null,
 
   load: async () => {
+    const id = ++requestId
     controller?.abort()
     controller = new AbortController()
-    set({ status: 'loading' })
+    const { season } = get()
+    set({ status: 'loading', anime: [] })
     try {
-      const anime = await fetchNow(controller.signal)
+      const anime = sameSeason(season, currentSeason())
+        ? await fetchNow(controller.signal)
+        : await fetchSeason(season, controller.signal)
+      if (id !== requestId) return
       set({ anime, status: 'ready' })
     } catch (e) {
-      if ((e as Error).name === 'AbortError') return
+      if (id !== requestId || (e as Error).name === 'AbortError') return
       set({ status: 'error' })
     }
+  },
+
+  setSeason: (season) => {
+    if (sameSeason(season, get().season)) return
+    set({ season, genreIds: [], query: '' })
+    void get().load()
   },
 
   toggleGenre: (id) =>

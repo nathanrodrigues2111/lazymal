@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
-import { Check, Copy, ExternalLink, Play, Star, Users, Hash, Trophy } from 'lucide-react'
+import {
+  CalendarClock,
+  Check,
+  Copy,
+  ExternalLink,
+  Play,
+  Star,
+  Users,
+  Hash,
+  Trophy,
+} from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
-import { compact } from '@/lib/utils'
-import { FMHY_VIDEO, WATCH_SOURCES } from '@/lib/watch'
+import { cn, compact } from '@/lib/utils'
+import { countdown, localAirLabel, nextAiring } from '@/lib/airing'
+import { FMHY_VIDEO, WATCH_SOURCES, pingSite, type SiteStatus } from '@/lib/watch'
 import type { Anime } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Drawer,
   DrawerContent,
@@ -27,6 +37,26 @@ export function DetailSheet() {
   useEffect(() => {
     if (selected) setShown(selected)
   }, [selected])
+
+  // Ping each streaming source's homepage when the sheet opens to show a
+  // live online/offline dot.
+  const [siteStatus, setSiteStatus] = useState<Record<string, SiteStatus>>({})
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setSiteStatus(
+      Object.fromEntries(WATCH_SOURCES.map((s) => [s.name, 'checking'])),
+    )
+    for (const src of WATCH_SOURCES) {
+      pingSite(src.home).then((ok) => {
+        if (!cancelled)
+          setSiteStatus((prev) => ({ ...prev, [src.name]: ok ? 'up' : 'down' }))
+      })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   const [copied, setCopied] = useState(false)
   const copyTitle = async () => {
@@ -97,6 +127,28 @@ export function DetailSheet() {
               <Stat icon={<Users className="size-3.5" />} label="Members" value={compact(shown.members)} />
             </div>
 
+            {/* Next episode */}
+            {(() => {
+              const air = nextAiring(shown)
+              if (!air) return null
+              return (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-brand/30 bg-brand/10 px-3.5 py-2.5">
+                  <CalendarClock className="size-4 shrink-0 text-brand" />
+                  <div className="flex-1 text-sm">
+                    <span className="font-semibold text-foreground">
+                      Next episode
+                    </span>{' '}
+                    <span className="text-muted-foreground">
+                      · {localAirLabel(air)}
+                    </span>
+                  </div>
+                  <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">
+                    {countdown(air)}
+                  </span>
+                </div>
+              )
+            })()}
+
             {/* Genres */}
             {shown.genres.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-1.5">
@@ -130,8 +182,8 @@ export function DetailSheet() {
             )}
 
             {/* Watch online */}
-            <div className="mt-6">
-              <div className="mb-2 flex items-center justify-between">
+            <div className="mt-7 border-t border-line/60 pt-5">
+              <div className="mb-3 flex items-center justify-between">
                 <h4 className="flex items-center gap-1.5 font-display text-sm font-semibold text-foreground">
                   <Play className="size-3.5 fill-brand text-brand" />
                   Watch online
@@ -145,41 +197,61 @@ export function DetailSheet() {
                   more sites ↗
                 </a>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-2">
                 {WATCH_SOURCES.map((src) => (
-                  <Button key={src.name} asChild className="rounded-full" size="lg">
-                    <a
-                      href={src.build({
-                        romaji: shown.title,
-                        english: shown.title_english,
-                      })}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      <Play className="size-4 fill-current" />
-                      {src.name}
-                    </a>
-                  </Button>
+                  <a
+                    key={src.name}
+                    href={src.build({
+                      romaji: shown.title,
+                      english: shown.title_english,
+                    })}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="flex items-center gap-2.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/50 hover:bg-accent active:scale-[0.99]"
+                  >
+                    <Play className="size-4 shrink-0 fill-brand text-brand" />
+                    <span className="flex-1">{src.name}</span>
+                    <StatusDot status={siteStatus[src.name]} />
+                  </a>
                 ))}
               </div>
-            </div>
 
-            {/* Link out */}
-            <Button
-              asChild
-              variant="secondary"
-              className="mt-3 w-full rounded-full"
-              size="lg"
-            >
-              <a href={shown.url} target="_blank" rel="noreferrer noopener">
+              {/* Link out */}
+              <a
+                href={shown.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
                 View on MyAnimeList
-                <ExternalLink className="size-4" />
+                <ExternalLink className="size-3.5" />
               </a>
-            </Button>
+            </div>
           </div>
         )}
       </DrawerContent>
     </Drawer>
+  )
+}
+
+function StatusDot({ status }: { status?: SiteStatus }) {
+  const color =
+    status === 'up'
+      ? 'bg-green-500'
+      : status === 'down'
+        ? 'bg-red-500'
+        : 'bg-muted-foreground/50'
+  const label =
+    status === 'up' ? 'Online' : status === 'down' ? 'Down' : 'Checking…'
+  return (
+    <span
+      title={label}
+      className={cn(
+        'size-2 rounded-full',
+        color,
+        status === 'checking' && 'animate-pulse',
+      )}
+    />
   )
 }
 

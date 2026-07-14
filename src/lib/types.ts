@@ -34,6 +34,12 @@ export interface Anime {
   synopsis: string | null
   season: string | null
   year: number | null
+  broadcast?: {
+    day: string | null
+    time: string | null
+    timezone: string | null
+    string: string | null
+  }
   genres: Genre[]
   themes: Genre[]
   studios: Genre[]

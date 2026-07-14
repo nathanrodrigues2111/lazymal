@@ -1,5 +1,4 @@
 import { motion } from 'motion/react'
-import { Check } from 'lucide-react'
 
 import { QUIZ_GENRES } from '@/lib/genres'
 import { cn } from '@/lib/utils'
@@ -12,7 +11,7 @@ interface Props {
 /** A grid of tappable genre chips used by both onboarding and settings. */
 export function GenrePicker({ selected, onToggle }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2">
       {QUIZ_GENRES.map((g) => {
         const active = selected.includes(g.name)
         return (
@@ -29,8 +28,7 @@ export function GenrePicker({ selected, onToggle }: Props) {
             )}
           >
             <span className="shrink-0 text-lg leading-none">{g.emoji}</span>
-            <span className="flex-1 text-left">{g.name}</span>
-            {active && <Check className="size-4 shrink-0 text-brand" />}
+            <span className="flex-1 whitespace-nowrap text-left">{g.name}</span>
           </motion.button>
         )
       })}
