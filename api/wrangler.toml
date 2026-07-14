@@ -1,0 +1,10 @@
+name = "lazymal-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# MAL_CLIENT_ID is a secret — do NOT put it here. Set it with:
+#   wrangler secret put MAL_CLIENT_ID
+# (get a Client ID at https://myanimelist.net/apiconfig)
+
+[observability]
+enabled = true

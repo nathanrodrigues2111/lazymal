@@ -1,6 +1,8 @@
 import type { Anime, Season, SeasonResponse } from './types'
 
-const BASE = 'https://api.jikan.moe/v4'
+// Point this at a self-hosted LazyMAL API worker via VITE_API_BASE (see /api),
+// otherwise fall back to the public Jikan API.
+const BASE = import.meta.env.VITE_API_BASE || 'https://api.jikan.moe/v4'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
