@@ -1,4 +1,4 @@
-import { RotateCcw } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 
 import { usePrefs } from '@/store/usePrefs'
 import { GenrePicker } from '@/components/GenrePicker'
@@ -18,7 +18,8 @@ interface Props {
 export function Settings({ open, onOpenChange }: Props) {
   const genres = usePrefs((s) => s.genres)
   const setGenres = usePrefs((s) => s.setGenres)
-  const redoQuiz = usePrefs((s) => s.redoQuiz)
+  const starredCount = usePrefs((s) => s.starred.length)
+  const clearStars = usePrefs((s) => s.clearStars)
 
   const toggle = (name: string) =>
     setGenres(
@@ -42,17 +43,16 @@ export function Settings({ open, onOpenChange }: Props) {
           </div>
 
           <div className="mt-6 flex gap-3">
-            <Button
-              variant="secondary"
-              className="flex-1 rounded-full"
-              onClick={() => {
-                onOpenChange(false)
-                redoQuiz()
-              }}
-            >
-              <RotateCcw className="size-4" />
-              Redo quiz
-            </Button>
+            {starredCount > 0 && (
+              <Button
+                variant="secondary"
+                className="flex-1 rounded-full"
+                onClick={clearStars}
+              >
+                <Trash2 className="size-4" />
+                Clear favorites ({starredCount})
+              </Button>
+            )}
             <Button
               className="flex-[2] rounded-full"
               size="lg"
