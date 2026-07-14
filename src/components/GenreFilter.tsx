@@ -6,7 +6,23 @@ import { usePrefs } from '@/store/usePrefs'
 import type { Genre } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
+// Parent orchestrates a staggered entrance; each chip rises + fades in turn,
+// mirroring the anime cards.
+const CONTAINER = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.035 } },
+}
+const CHIP = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+  },
+}
+
 export function GenreFilter({ genres }: { genres: Genre[] }) {
+  const media = useStore((s) => s.media)
   const genreIds = useStore((s) => s.genreIds)
   const toggleGenre = useStore((s) => s.toggleGenre)
   const clearGenres = useStore((s) => s.clearGenres)
@@ -17,18 +33,23 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
 
   if (genres.length === 0) return null
 
-  let i = 0
   return (
-    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+    <motion.div
+      // Re-key on media so the stagger replays when switching Anime/Manga.
+      key={media}
+      variants={CONTAINER}
+      initial="hidden"
+      animate="show"
+      className="no-scrollbar flex gap-2 overflow-x-auto pb-1"
+    >
       {(favorites.length > 0 || hasStarred) && (
-        <Chip index={i++} active={forYou} onClick={toggleForYou}>
+        <Chip active={forYou} onClick={toggleForYou}>
           <Sparkles className="size-3" />
           For You
         </Chip>
       )}
       {/* "All" clears any genre selection and For You. */}
       <Chip
-        index={i++}
         active={genreIds.length === 0 && !forYou}
         onClick={() => {
           clearGenres()
@@ -40,38 +61,28 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
       {genres.map((g) => (
         <Chip
           key={g.mal_id}
-          index={i++}
           active={genreIds.includes(g.mal_id)}
           onClick={() => toggleGenre(g.mal_id)}
         >
           {g.name}
         </Chip>
       ))}
-    </div>
+    </motion.div>
   )
 }
 
 function Chip({
   active,
   onClick,
-  index,
   children,
 }: {
   active: boolean
   onClick: () => void
-  index: number
   children: React.ReactNode
 }) {
   return (
     <motion.button
-      layout
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.4,
-        delay: Math.min(index * 0.03, 0.4),
-        ease: [0.22, 1, 0.36, 1],
-      }}
+      variants={CHIP}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={cn(
