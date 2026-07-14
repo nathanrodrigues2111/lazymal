@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { useStore } from '@/store/useStore'
+import { usePrefs } from '@/store/usePrefs'
 import { currentSeason, seasonEmoji, seasonLabel } from '@/lib/season'
 import { Toolbar } from '@/components/Toolbar'
 import { AnimeGrid } from '@/components/AnimeGrid'
@@ -13,6 +14,8 @@ const SEASON = currentSeason()
 
 export default function App() {
   const load = useStore((s) => s.load)
+  const detailOpen = useStore((s) => s.selected !== null)
+  const onboarded = usePrefs((s) => s.onboarded)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Load the current season once on mount.
@@ -20,9 +23,13 @@ export default function App() {
     void load()
   }, [load])
 
+  // Disable pull-to-refresh while any sheet/modal is open so their own
+  // drag gestures don't trigger a refresh.
+  const sheetOpen = detailOpen || settingsOpen || !onboarded
+
   return (
     <>
-      <PullToRefresh onRefresh={load}>
+      <PullToRefresh onRefresh={load} disabled={sheetOpen}>
         <div className="mx-auto flex min-h-svh w-full max-w-[540px] flex-col md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
           {/* Sticky control deck */}
           <header className="sticky top-0 z-10 border-b border-line/70 bg-ink/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl md:px-6">

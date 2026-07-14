@@ -16,9 +16,12 @@ type Phase = 'idle' | 'drag' | 'refresh' | 'settle'
  */
 export function PullToRefresh({
   onRefresh,
+  disabled = false,
   children,
 }: {
   onRefresh: () => Promise<void>
+  /** Disable the gesture (e.g. while a bottom sheet / modal is open). */
+  disabled?: boolean
   children: ReactNode
 }) {
   const [pull, setPull] = useState(0)
@@ -27,6 +30,8 @@ export function PullToRefresh({
   const pullRef = useRef(0)
   const phaseRef = useRef<Phase>('idle')
   const startRef = useRef<number | null>(null)
+  const disabledRef = useRef(disabled)
+  disabledRef.current = disabled
   const onRefreshRef = useRef(onRefresh)
   onRefreshRef.current = onRefresh
 
@@ -42,12 +47,18 @@ export function PullToRefresh({
   useEffect(() => {
     const onStart = (e: TouchEvent) => {
       startRef.current =
-        window.scrollY <= 0 && phaseRef.current !== 'refresh'
+        !disabledRef.current &&
+        window.scrollY <= 0 &&
+        phaseRef.current !== 'refresh'
           ? e.touches[0].clientY
           : null
     }
 
     const onMove = (e: TouchEvent) => {
+      if (disabledRef.current) {
+        startRef.current = null
+        return
+      }
       if (startRef.current === null || phaseRef.current === 'refresh') return
       const dy = e.touches[0].clientY - startRef.current
       if (dy > 0 && window.scrollY <= 0) {
