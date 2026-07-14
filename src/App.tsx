@@ -67,10 +67,10 @@ export default function App() {
                       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
                     >
                       <p className="font-display text-lg font-extrabold text-foreground">
-                        {isManga ? 'Manga' : seasonLabel(SEASON)}
+                        {isManga ? 'Manga' : 'Anime'}
                       </p>
                       <p className="text-xs font-medium text-brand">
-                        {isManga ? 'Top manga' : 'This season'}
+                        {isManga ? 'Top manga' : seasonLabel(SEASON)}
                       </p>
                     </motion.div>
                   </AnimatePresence>
