@@ -10,6 +10,14 @@ export function MediaToggle() {
   const media = useStore((s) => s.media)
   const setMedia = useStore((s) => s.setMedia)
 
+  const switchTo = (m: Media) => {
+    if (m === media) return
+    // Jump to the top so the new list starts from the beginning instead of
+    // landing at a stale scroll offset.
+    window.scrollTo({ top: 0 })
+    setMedia(m)
+  }
+
   return (
     <div className="flex shrink-0 rounded-full border border-line bg-panel-2 p-0.5">
       {OPTIONS.map((m) => {
@@ -17,7 +25,7 @@ export function MediaToggle() {
         return (
           <button
             key={m}
-            onClick={() => setMedia(m)}
+            onClick={() => switchTo(m)}
             className={cn(
               'relative rounded-full px-3.5 py-1.5 text-xs font-bold capitalize transition-colors',
               active ? 'text-white' : 'text-muted-foreground hover:text-foreground',
