@@ -11,6 +11,7 @@ import { Onboarding } from '@/components/Onboarding'
 import { Settings } from '@/components/Settings'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { MediaToggle } from '@/components/MediaToggle'
+import { SwipeNav } from '@/components/SwipeNav'
 
 const SEASON = currentSeason()
 
@@ -92,6 +93,7 @@ export default function App() {
         </div>
       </PullToRefresh>
 
+      <SwipeNav disabled={sheetOpen} />
       <DetailSheet />
       <Settings open={settingsOpen} onOpenChange={setSettingsOpen} />
       <Onboarding />
