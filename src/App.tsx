@@ -16,6 +16,7 @@ const SEASON = currentSeason()
 
 export default function App() {
   const load = useStore((s) => s.load)
+  const prewarmOther = useStore((s) => s.prewarmOther)
   const media = useStore((s) => s.media)
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
@@ -23,10 +24,13 @@ export default function App() {
 
   const isManga = media === 'manga'
 
-  // Load the current season once on mount.
+  // Load the current media on mount, then warm the other mode's cache in the
+  // background so toggling Anime/Manga is instant.
   useEffect(() => {
-    void load()
-  }, [load])
+    void load().then(() => {
+      setTimeout(() => void prewarmOther(), 1500)
+    })
+  }, [load, prewarmOther])
 
   // Disable pull-to-refresh while any sheet/modal is open so their own
   // drag gestures don't trigger a refresh.

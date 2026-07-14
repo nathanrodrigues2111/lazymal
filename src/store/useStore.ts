@@ -17,6 +17,8 @@ interface StoreState {
   selected: Anime | null
 
   load: () => Promise<void>
+  /** Warm the OTHER media's cache in the background so toggling is instant. */
+  prewarmOther: () => Promise<void>
   setMedia: (media: Media) => void
   setSeason: (season: Season) => void
   toggleGenre: (id: number) => void
@@ -72,6 +74,20 @@ export const useStore = create<StoreState>((set, get) => ({
       if (id !== requestId || (e as Error).name === 'AbortError') return
       // Keep showing cached data on failure; only error if we have nothing.
       if (!cached) set({ status: 'error' })
+    }
+  },
+
+  prewarmOther: async () => {
+    const { media } = get()
+    try {
+      // Only fetch if not already cached, and never touch the visible state.
+      if (media === 'anime') {
+        if (!readCache('manga')) writeCache('manga', await fetchManga())
+      } else {
+        if (!readCache('anime-now')) writeCache('anime-now', await fetchNow())
+      }
+    } catch {
+      /* best-effort — ignore */
     }
   },
 
