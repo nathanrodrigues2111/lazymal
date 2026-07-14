@@ -106,3 +106,44 @@ export async function fetchSeason(
   )
   return dedupe(res.data)
 }
+
+/**
+ * Top manga (manga has no "season"). Pages through /top/manga, keeping partial
+ * results on failure and falling back to the first page.
+ */
+export async function fetchManga(signal?: AbortSignal): Promise<Anime[]> {
+  const all: Anime[] = []
+  const seen = new Set<number>()
+  let page = 1
+  let hasNext = true
+
+  while (hasNext && page <= MAX_PAGES) {
+    let res: SeasonResponse
+    try {
+      // Primary: currently-publishing manga.
+      res = await get<SeasonResponse>(
+        `/top/manga?filter=publishing&page=${page}`,
+        signal,
+        3,
+      )
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') throw e
+      break
+    }
+    for (const a of res.data) {
+      if (!seen.has(a.mal_id)) {
+        seen.add(a.mal_id)
+        all.push(a)
+      }
+    }
+    hasNext = res.pagination.has_next_page
+    page += 1
+    if (hasNext) await sleep(600)
+  }
+
+  if (all.length > 0) return dedupe(all)
+
+  // Backup: bare /top/manga (the reliable cache key).
+  const res = await get<SeasonResponse>('/top/manga', signal, 6)
+  return dedupe(res.data)
+}

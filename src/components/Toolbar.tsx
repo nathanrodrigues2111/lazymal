@@ -17,6 +17,7 @@ export function Toolbar() {
   const sort = useStore((s) => s.sort)
   const setSort = useStore((s) => s.setSort)
   const load = useStore((s) => s.load)
+  const media = useStore((s) => s.media)
   const [open, setOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -37,7 +38,7 @@ export function Toolbar() {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search this season…"
+          placeholder={media === 'manga' ? 'Search manga…' : 'Search anime…'}
           className="pl-10"
           aria-label="Search anime"
         />

@@ -69,7 +69,7 @@ export function AnimeGrid() {
 
       {visible.length > 0 && (
         <p className="py-4 text-center text-xs text-muted-foreground">
-          {visible.length} titles this season 🌸
+          {visible.length} titles 🌸
         </p>
       )}
     </div>

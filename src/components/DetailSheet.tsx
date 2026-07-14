@@ -15,7 +15,14 @@ import {
 import { useStore } from '@/store/useStore'
 import { cn, compact } from '@/lib/utils'
 import { countdown, localAirLabel, nextAiring } from '@/lib/airing'
-import { FMHY_VIDEO, WATCH_SOURCES, pingSite, type SiteStatus } from '@/lib/watch'
+import {
+  FMHY_READING,
+  FMHY_VIDEO,
+  READ_SOURCES,
+  WATCH_SOURCES,
+  pingSite,
+  type SiteStatus,
+} from '@/lib/watch'
 import type { Anime } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -38,16 +45,19 @@ export function DetailSheet() {
     if (selected) setShown(selected)
   }, [selected])
 
-  // Ping each streaming source's homepage when the sheet opens to show a
-  // live online/offline dot.
+  // Ping each source's homepage when the sheet opens to show a live
+  // online/offline dot (streaming for anime, readers for manga).
   const [siteStatus, setSiteStatus] = useState<Record<string, SiteStatus>>({})
   useEffect(() => {
-    if (!open) return
+    if (!open || !shown) return
     let cancelled = false
-    setSiteStatus(
-      Object.fromEntries(WATCH_SOURCES.map((s) => [s.name, 'checking'])),
-    )
-    for (const src of WATCH_SOURCES) {
+    const mangaItem =
+      shown.publishing !== undefined ||
+      shown.chapters !== undefined ||
+      shown.volumes !== undefined
+    const srcs = mangaItem ? READ_SOURCES : WATCH_SOURCES
+    setSiteStatus(Object.fromEntries(srcs.map((s) => [s.name, 'checking'])))
+    for (const src of srcs) {
       pingSite(src.home).then((ok) => {
         if (!cancelled)
           setSiteStatus((prev) => ({ ...prev, [src.name]: ok ? 'up' : 'down' }))
@@ -56,7 +66,7 @@ export function DetailSheet() {
     return () => {
       cancelled = true
     }
-  }, [open])
+  }, [open, shown])
 
   const [copied, setCopied] = useState(false)
   const copyTitle = async () => {
@@ -69,6 +79,13 @@ export function DetailSheet() {
       /* clipboard blocked — ignore */
     }
   }
+
+  const isManga =
+    !!shown &&
+    (shown.publishing !== undefined ||
+      shown.chapters !== undefined ||
+      shown.volumes !== undefined)
+  const sources = isManga ? READ_SOURCES : WATCH_SOURCES
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && select(null)}>
@@ -112,6 +129,12 @@ export function DetailSheet() {
                   {shown.type && <Badge variant="outline">{shown.type}</Badge>}
                   {shown.episodes != null && (
                     <Badge variant="outline">{shown.episodes} eps</Badge>
+                  )}
+                  {shown.chapters != null && (
+                    <Badge variant="outline">{shown.chapters} ch</Badge>
+                  )}
+                  {shown.volumes != null && (
+                    <Badge variant="outline">{shown.volumes} vol</Badge>
                   )}
                   {shown.status && (
                     <Badge variant="secondary">{shown.status}</Badge>
@@ -171,25 +194,35 @@ export function DetailSheet() {
               </p>
             </div>
 
-            {/* Studios */}
-            {shown.studios.length > 0 && (
-              <p className="mt-4 text-xs text-muted-foreground">
-                Studio:{' '}
-                <span className="text-foreground">
-                  {shown.studios.map((s) => s.name).join(', ')}
-                </span>
-              </p>
-            )}
+            {/* Studios / Authors */}
+            {isManga
+              ? shown.authors &&
+                shown.authors.length > 0 && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Author:{' '}
+                    <span className="text-foreground">
+                      {shown.authors.map((a) => a.name).join(', ')}
+                    </span>
+                  </p>
+                )
+              : shown.studios.length > 0 && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Studio:{' '}
+                    <span className="text-foreground">
+                      {shown.studios.map((s) => s.name).join(', ')}
+                    </span>
+                  </p>
+                )}
 
-            {/* Watch online */}
+            {/* Watch / Read online */}
             <div className="mt-7 border-t border-line/60 pt-5">
               <div className="mb-3 flex items-center justify-between">
                 <h4 className="flex items-center gap-1.5 font-display text-sm font-semibold text-foreground">
                   <Play className="size-3.5 fill-brand text-brand" />
-                  Watch online
+                  {isManga ? 'Read online' : 'Watch online'}
                 </h4>
                 <a
-                  href={FMHY_VIDEO}
+                  href={isManga ? FMHY_READING : FMHY_VIDEO}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-[11px] text-muted-foreground underline decoration-line underline-offset-2 hover:text-foreground"
@@ -198,7 +231,7 @@ export function DetailSheet() {
                 </a>
               </div>
               <div className="flex flex-col gap-2">
-                {WATCH_SOURCES.map((src) => (
+                {sources.map((src) => (
                   <a
                     key={src.name}
                     href={src.build({

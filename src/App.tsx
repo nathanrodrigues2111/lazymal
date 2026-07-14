@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
@@ -9,14 +10,18 @@ import { DetailSheet } from '@/components/DetailSheet'
 import { Onboarding } from '@/components/Onboarding'
 import { Settings } from '@/components/Settings'
 import { PullToRefresh } from '@/components/PullToRefresh'
+import { MediaToggle } from '@/components/MediaToggle'
 
 const SEASON = currentSeason()
 
 export default function App() {
   const load = useStore((s) => s.load)
+  const media = useStore((s) => s.media)
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  const isManga = media === 'manga'
 
   // Load the current season once on mount.
   useEffect(() => {
@@ -32,27 +37,48 @@ export default function App() {
       <PullToRefresh onRefresh={load} disabled={sheetOpen}>
         <div className="mx-auto flex min-h-svh w-full max-w-[540px] flex-col md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
           {/* Sticky control deck */}
-          <header className="sticky top-0 z-10 border-b border-line/70 bg-ink/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl md:px-6">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <div className="flex items-center gap-3 md:shrink-0">
+          <header className="sticky top-0 z-10 space-y-3 border-b border-line/70 bg-ink/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl md:px-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setSettingsOpen(true)}
                   aria-label="Open settings"
-                  className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand/10 text-2xl transition-transform active:scale-90"
+                  className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand/10 text-2xl transition-transform active:scale-90"
                 >
-                  {seasonEmoji(SEASON.season)}
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={isManga ? 'manga' : 'anime'}
+                      initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    >
+                      {isManga ? '📖' : seasonEmoji(SEASON.season)}
+                    </motion.span>
+                  </AnimatePresence>
                 </button>
                 <div className="leading-tight">
-                  <p className="font-display text-lg font-extrabold text-foreground">
-                    {seasonLabel(SEASON)}
-                  </p>
-                  <p className="text-xs font-medium text-brand">This season</p>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={isManga ? 'manga' : 'anime'}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <p className="font-display text-lg font-extrabold text-foreground">
+                        {isManga ? 'Manga' : seasonLabel(SEASON)}
+                      </p>
+                      <p className="text-xs font-medium text-brand">
+                        {isManga ? 'Top manga' : 'This season'}
+                      </p>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
-              <div className="md:flex-1">
-                <Toolbar />
-              </div>
+              <MediaToggle />
             </div>
+            <Toolbar />
           </header>
 
           {/* Content */}

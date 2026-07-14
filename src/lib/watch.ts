@@ -4,6 +4,7 @@
  * matches best. FMHY is linked as a fallback directory when sites move domains.
  */
 export const FMHY_VIDEO = 'https://fmhy.net/video'
+export const FMHY_READING = 'https://fmhy.net/readingpiracyguide'
 
 export interface WatchTitle {
   romaji: string
@@ -28,6 +29,22 @@ export const WATCH_SOURCES: WatchSource[] = [
     home: 'https://anikototv.to',
     build: ({ romaji, english }) =>
       `https://anikototv.to/filter?keyword=${enc(english || romaji)}`,
+  },
+]
+
+/** Manga readers for the "Read online" launcher. */
+export const READ_SOURCES: WatchSource[] = [
+  {
+    name: 'MangaDex',
+    home: 'https://mangadex.org',
+    build: ({ english, romaji }) =>
+      `https://mangadex.org/search?q=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Comick',
+    home: 'https://comick.io',
+    build: ({ english, romaji }) =>
+      `https://comick.io/search?q=${enc(english || romaji)}`,
   },
 ]
 

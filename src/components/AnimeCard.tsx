@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { motion } from 'motion/react'
-import { Sparkles, Star, Tv } from 'lucide-react'
+import { BookOpen, Sparkles, Star, Tv } from 'lucide-react'
 
 import type { Anime } from '@/lib/types'
 import { cn, compact } from '@/lib/utils'
@@ -17,6 +17,8 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
     anime.images.webp?.large_image_url || anime.images.jpg.large_image_url
   const title = anime.title_english || anime.title
   const topGenres = anime.genres.slice(0, 2)
+  const isManga = anime.publishing !== undefined || anime.chapters !== undefined
+  const count = anime.episodes ?? anime.chapters
 
   return (
     <motion.button
@@ -63,12 +65,12 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
         </div>
       )}
 
-      {/* Type / episodes */}
+      {/* Type / count */}
       {anime.type && (
         <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/90 backdrop-blur-md">
-          <Tv className="size-3" />
+          {isManga ? <BookOpen className="size-3" /> : <Tv className="size-3" />}
           {anime.type}
-          {anime.episodes ? ` · ${anime.episodes}` : ''}
+          {count ? ` · ${count}` : ''}
         </div>
       )}
 

@@ -1,3 +1,5 @@
+export type Media = 'anime' | 'manga'
+
 export type SeasonName = 'winter' | 'spring' | 'summer' | 'fall'
 
 export interface Season {
@@ -26,6 +28,11 @@ export interface Anime {
   episodes: number | null
   status: string | null
   airing: boolean
+  // Manga-only fields (present when browsing manga)
+  chapters?: number | null
+  volumes?: number | null
+  publishing?: boolean
+  authors?: Genre[]
   score: number | null
   scored_by: number | null
   rank: number | null
