@@ -14,11 +14,6 @@ import { Button } from '@/components/ui/button'
 const GRID =
   'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 xl:grid-cols-6'
 
-const matchesQuery = (a: Anime, q: string) =>
-  !q ||
-  a.title.toLowerCase().includes(q) ||
-  (a.title_english?.toLowerCase().includes(q) ?? false)
-
 export function AnimeGrid() {
   const anime = useStore((s) => s.anime)
   const status = useStore((s) => s.status)
@@ -50,17 +45,16 @@ export function AnimeGrid() {
   )
 
   // For You also surfaces starred titles not in the current list (e.g. ones you
-  // searched for and saved) — pinned to the top.
+  // searched for and saved) — pinned to the top. Shown regardless of any
+  // lingering search query, since For You isn't a search view.
   const visible = useMemo(() => {
     if (!forYou) return listed
-    const q = query.trim().toLowerCase()
     const inList = new Set(listed.map((a) => a.mal_id))
     const extras = Object.values(starredItems)
       .filter((e) => e.media === media && !inList.has(e.item.mal_id))
       .map((e) => e.item)
-      .filter((a) => matchesQuery(a, q))
     return [...extras, ...listed]
-  }, [forYou, listed, starredItems, media, query])
+  }, [forYou, listed, starredItems, media])
 
   // Live search: a query that matches nothing locally (and not in For You)
   // fetches results from the search endpoint.
@@ -186,7 +180,9 @@ function Empty({
       <img
         src={`${import.meta.env.BASE_URL}404.gif`}
         alt="Nothing found"
-        className="w-44 max-w-[70%] rounded-2xl drop-shadow-[0_8px_24px_rgba(255,77,109,0.25)]"
+        width={128}
+        height={126}
+        className="h-28 w-28 rounded-2xl object-contain drop-shadow-[0_8px_24px_rgba(255,77,109,0.25)]"
       />
       <div>
         <p className="font-display text-lg font-bold text-foreground">{title}</p>

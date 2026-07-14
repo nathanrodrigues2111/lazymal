@@ -12,7 +12,9 @@ param(
   [string]$Message = "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 )
 
-$ErrorActionPreference = 'Stop'
+# Note: don't use 'Stop' — native tools (git) write harmless warnings to
+# stderr, which 'Stop' would treat as fatal. We gate on $LASTEXITCODE instead.
+$ErrorActionPreference = 'Continue'
 $root = $PSScriptRoot
 Set-Location $root
 
