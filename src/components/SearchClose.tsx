@@ -76,7 +76,7 @@ export function SearchClose() {
           exit={{ opacity: 0, y: 24, scale: 0.5, x: '-50%' }}
           transition={{ type: 'spring', stiffness: 500, damping: 30, mass: 0.6 }}
           style={{ bottom: `calc(env(safe-area-inset-bottom) + 1.25rem + ${kb}px)` }}
-          className="fixed left-1/2 z-50 grid size-14 place-items-center rounded-full bg-brand text-white shadow-2xl shadow-brand/40 transition-colors active:brightness-95"
+          className="fixed left-1/2 z-50 grid size-14 place-items-center rounded-full bg-brand text-white shadow-2xl shadow-brand/40 transition-colors active:brightness-95 [@media(pointer:fine)]:hidden"
         >
           <X className="size-6" />
         </motion.button>
