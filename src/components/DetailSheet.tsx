@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion, Reorder } from 'motion/react'
+import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react'
 import {
   CalendarClock,
   Check,
@@ -28,6 +28,7 @@ import {
   WATCH_SOURCES,
   orderSources,
 } from '@/lib/watch'
+import type { WatchSource } from '@/lib/watch'
 import type { Anime } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -36,6 +37,77 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from '@/components/ui/drawer'
+
+/**
+ * A single draggable row in the source reorder list. Uses an explicit drag
+ * handle (the grip) via `useDragControls` so drag-to-reorder works with both
+ * mouse (desktop) and touch — the default `Reorder.Item` press-listener is
+ * unreliable with a mouse here.
+ */
+function SourceRow({
+  src,
+  isHidden,
+  onToggleHide,
+}: {
+  src: WatchSource
+  isHidden: boolean
+  onToggleHide: () => void
+}) {
+  const controls = useDragControls()
+  return (
+    <Reorder.Item
+      value={src.name}
+      dragListener={false}
+      dragControls={controls}
+      data-vaul-no-drag
+      whileDrag={{ scale: 1.03 }}
+      className={cn(
+        'flex select-none items-center gap-2.5 rounded-xl border bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground',
+        isHidden ? 'border-line opacity-45' : 'border-brand/40',
+      )}
+    >
+      <button
+        type="button"
+        onPointerDown={(e) => controls.start(e)}
+        aria-label={`Drag to reorder ${src.name}`}
+        className="-m-1 grid shrink-0 cursor-grab touch-none place-items-center p-1 text-muted-foreground active:cursor-grabbing"
+      >
+        <GripVertical className="size-4 shrink-0" />
+      </button>
+      <span className="flex-1">{src.name}</span>
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleHide()
+        }}
+        aria-label={isHidden ? `Show ${src.name}` : `Hide ${src.name}`}
+        className="-m-1 grid shrink-0 place-items-center rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={isHidden ? 'off' : 'on'}
+            initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.5, rotate: 30 }}
+            transition={{
+              type: 'spring',
+              stiffness: 500,
+              damping: 30,
+            }}
+            className="grid place-items-center"
+          >
+            {isHidden ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </motion.span>
+        </AnimatePresence>
+      </button>
+    </Reorder.Item>
+  )
+}
 
 export function DetailSheet() {
   const selected = useStore((s) => s.selected)
@@ -334,56 +406,16 @@ export function DetailSheet() {
                   onReorder={(next) => setSourceOrder(mediaKey, next)}
                   className="flex flex-col gap-2"
                 >
-                  {sources.map((src) => {
-                    const isHidden = hidden.includes(src.name)
-                    return (
-                      <Reorder.Item
-                        key={src.name}
-                        value={src.name}
-                        data-vaul-no-drag
-                        whileDrag={{ scale: 1.03 }}
-                        className={cn(
-                          'flex cursor-grab touch-none select-none items-center gap-2.5 rounded-xl border bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground active:cursor-grabbing',
-                          isHidden ? 'border-line opacity-45' : 'border-brand/40',
-                        )}
-                      >
-                        <GripVertical className="size-4 shrink-0 text-muted-foreground" />
-                        <span className="flex-1">{src.name}</span>
-                        <button
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleSourceHidden(mediaKey, src.name)
-                          }}
-                          aria-label={
-                            isHidden ? `Show ${src.name}` : `Hide ${src.name}`
-                          }
-                          className="-m-1 grid shrink-0 place-items-center rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          <AnimatePresence mode="wait" initial={false}>
-                            <motion.span
-                              key={isHidden ? 'off' : 'on'}
-                              initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
-                              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                              exit={{ opacity: 0, scale: 0.5, rotate: 30 }}
-                              transition={{
-                                type: 'spring',
-                                stiffness: 500,
-                                damping: 30,
-                              }}
-                              className="grid place-items-center"
-                            >
-                              {isHidden ? (
-                                <EyeOff className="size-4" />
-                              ) : (
-                                <Eye className="size-4" />
-                              )}
-                            </motion.span>
-                          </AnimatePresence>
-                        </button>
-                      </Reorder.Item>
-                    )
-                  })}
+                  {sources.map((src) => (
+                    <SourceRow
+                      key={src.name}
+                      src={src}
+                      isHidden={hidden.includes(src.name)}
+                      onToggleHide={() =>
+                        toggleSourceHidden(mediaKey, src.name)
+                      }
+                    />
+                  ))}
                 </Reorder.Group>
               ) : visibleSources.length > 0 ? (
                 <div className="flex flex-col gap-2">

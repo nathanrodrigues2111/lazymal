@@ -86,8 +86,8 @@ export const useStore = create<StoreState>((set, get) => ({
 
   refresh: async () => {
     await get().load()
-    if (get().status === 'error') get().showToast('Couldn’t refresh~ try again?')
-    else get().showToast(`All fresh~ ${get().anime.length} titles`)
+    if (get().status === 'error') get().showToast('Couldn’t refresh. Try again?')
+    else get().showToast(`All fresh — ${get().anime.length} titles`)
   },
 
   showToast: (message) => {

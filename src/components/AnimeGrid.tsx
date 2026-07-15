@@ -139,8 +139,8 @@ export function AnimeGrid() {
   if (status === 'error') {
     return (
       <Empty
-        title="Mou~ it won’t load…"
-        body="MyAnimeList is being a little sleepy right now~ give it a sec and poke it again!"
+        title="It won’t load…"
+        body="MyAnimeList is being a little sleepy right now. Give it a sec and try again."
         action={
           <Button onClick={() => load()} className="rounded-full">
             Try again
@@ -163,7 +163,7 @@ export function AnimeGrid() {
         <p className="text-xs font-medium text-muted-foreground">
           {searching
             ? `Peeking through every ${media} for “${q}”…`
-            : `Here’s what I found for “${q}”~`}
+            : `Here’s what I found for “${q}”`}
         </p>
       )}
 
@@ -193,15 +193,15 @@ export function AnimeGrid() {
           title={q ? 'Nothing found…' : 'It’s a little empty here…'}
           body={
             q
-              ? `Couldn’t find any ${media} called “${q}” anywhere~ try the source buttons above to peek at the streaming sites!`
-              : `Nothing matches these filters~ tap “All” to see everything again!`
+              ? `Couldn’t find any ${media} called “${q}” anywhere. Try the source buttons above to peek at the streaming sites.`
+              : `Nothing matches these filters. Tap “All” to see everything again.`
           }
         />
       )}
 
       {items.length > 0 && !searchMode && (
         <p className="py-4 text-center text-xs text-muted-foreground">
-          {items.length} lovely titles~
+          {items.length} lovely titles
         </p>
       )}
     </div>

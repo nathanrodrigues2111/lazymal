@@ -36,7 +36,7 @@ export function Toolbar() {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={media === 'manga' ? 'Search manga~' : 'Search anime~'}
+          placeholder={media === 'manga' ? 'Search manga' : 'Search anime'}
           className="pl-10"
           aria-label="Search anime"
         />
