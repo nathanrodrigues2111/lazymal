@@ -16,7 +16,7 @@ import { AnimeGrid } from '@/components/AnimeGrid'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { MediaToggle } from '@/components/MediaToggle'
 import { SwipeNav } from '@/components/SwipeNav'
-import { SearchGesture } from '@/components/SearchGesture'
+import { GestureLayer } from '@/components/GestureLayer'
 import { Toast } from '@/components/Toast'
 
 // Modals aren't needed for first paint — split them into their own chunks
@@ -180,7 +180,7 @@ export default function App() {
       </PullToRefresh>
 
       <SwipeNav disabled={sheetOpen} />
-      <SearchGesture disabled={sheetOpen} />
+      <GestureLayer disabled={sheetOpen} />
       {(modalsReady || detailOpen) && (
         <Suspense fallback={null}>
           <DetailSheet />
