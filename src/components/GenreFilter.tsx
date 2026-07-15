@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { ChevronRight, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
@@ -36,13 +36,19 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
   const hasStarred = usePrefs((s) => s.starred.length > 0)
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [canRight, setCanRight] = useState(false)
+  // 'none' = fits (no arrow); 'right' = more to scroll; 'left' = at the end,
+  // so the arrow flips to send you back to the start.
+  const [arrow, setArrow] = useState<'none' | 'right' | 'left'>('none')
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    const update = () =>
-      setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+    const update = () => {
+      const scrollable = el.scrollWidth > el.clientWidth + 4
+      if (!scrollable) return setArrow('none')
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
+      setArrow(atEnd ? 'left' : 'right')
+    }
     update()
     el.addEventListener('scroll', update, { passive: true })
     window.addEventListener('resize', update)
@@ -55,15 +61,14 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
   if (genres.length === 0) return null
 
   return (
-    <div className="relative">
+    <div className="flex gap-2">
+      {/* Pinned: For You + All never scroll away. */}
       <motion.div
-        ref={scrollRef}
-        // Re-key on media so the stagger replays when switching Anime/Manga.
-        key={media}
+        key={`${media}-pinned`}
         variants={CONTAINER}
         initial="hidden"
         animate="show"
-        className="no-scrollbar flex scroll-smooth gap-2 overflow-x-auto pb-1"
+        className="flex shrink-0 gap-2"
       >
         {(favorites.length > 0 || hasStarred) && (
           <Chip active={forYou} onClick={toggleForYou}>
@@ -81,32 +86,54 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
         >
           All
         </Chip>
-        {genres.map((g) => (
-          <Chip
-            key={g.mal_id}
-            active={genreIds.includes(g.mal_id)}
-            onClick={() => toggleGenre(g.mal_id)}
-          >
-            {g.name}
-          </Chip>
-        ))}
       </motion.div>
 
-      {/* Desktop-only (fine pointer) scroll affordance — touch devices swipe. */}
-      {canRight && (
-        <button
-          type="button"
-          aria-label="Scroll genres right"
-          onClick={() =>
-            scrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })
-          }
-          className="absolute bottom-1 right-0 top-0 hidden items-center bg-gradient-to-l from-ink via-ink pl-8 pr-0.5 [@media(pointer:fine)]:flex"
+      {/* Scrollable genres. */}
+      <div className="relative min-w-0 flex-1">
+        <motion.div
+          ref={scrollRef}
+          // Re-key on media so the stagger replays when switching Anime/Manga.
+          key={media}
+          variants={CONTAINER}
+          initial="hidden"
+          animate="show"
+          className="no-scrollbar flex scroll-smooth gap-2 overflow-x-auto pb-1"
         >
-          <span className="grid size-7 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground">
-            <ChevronRight className="size-4" />
-          </span>
-        </button>
-      )}
+          {genres.map((g) => (
+            <Chip
+              key={g.mal_id}
+              active={genreIds.includes(g.mal_id)}
+              onClick={() => toggleGenre(g.mal_id)}
+            >
+              {g.name}
+            </Chip>
+          ))}
+        </motion.div>
+
+        {/* Desktop-only (fine pointer) scroll affordance — touch devices swipe.
+            Flips to a back arrow once you reach the end. */}
+        {arrow !== 'none' && (
+          <button
+            type="button"
+            aria-label={arrow === 'right' ? 'Scroll genres right' : 'Back to start'}
+            onClick={() => {
+              const el = scrollRef.current
+              if (!el) return
+              if (arrow === 'right') el.scrollBy({ left: 240, behavior: 'smooth' })
+              else el.scrollTo({ left: 0, behavior: 'smooth' })
+            }}
+            className="absolute bottom-1 right-0 top-0 hidden items-center bg-gradient-to-l from-ink via-ink pl-8 pr-0.5 [@media(pointer:fine)]:flex"
+          >
+            <span className="grid size-7 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:border-brand/50 hover:text-foreground">
+              {arrow === 'right' ? (
+                <ChevronRight className="size-4" />
+              ) : (
+                <ChevronLeft className="size-4" />
+              )}
+            </span>
+          </button>
+        )}
+      </div>
     </div>
   )
 }
