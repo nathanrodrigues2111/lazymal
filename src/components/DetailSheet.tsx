@@ -406,7 +406,7 @@ export function DetailSheet() {
                 </div>
               ) : (
                 <p className="rounded-xl border border-line bg-panel-2 px-4 py-3 text-center text-xs text-muted-foreground">
-                  all sources hidden — tap reorder to bring some back~
+                  all sources hidden — tap reorder to bring some back
                 </p>
               )}
 
