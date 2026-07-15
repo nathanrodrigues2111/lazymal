@@ -66,7 +66,7 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
   const showForYou = favorites.length > 0 || hasStarred
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2" data-tour="genres">
       {/* Pinned: only For You stays put — pinning All too ate up the row. */}
       {showForYou && (
         <motion.div

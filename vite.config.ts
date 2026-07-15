@@ -4,10 +4,12 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Base is the repo name so assets resolve on GitHub Pages (user.github.io/lazymal).
-// For a custom domain or local preview, build with `--base=/`.
+// GitHub Pages serves under /lazymal/; Cloudflare Pages serves at the root.
+// DEPLOY_TARGET=cloudflare switches the base (and PWA scope) accordingly.
+const base = process.env.DEPLOY_TARGET === 'cloudflare' ? '/' : '/lazymal/'
+
 export default defineConfig({
-  base: '/lazymal/',
+  base,
   plugins: [react(), tailwindcss(), VitePWA({
     registerType: 'autoUpdate',
     includeAssets: ['apple-touch-icon.png'],
@@ -20,8 +22,8 @@ export default defineConfig({
       background_color: '#000000',
       display: 'standalone',
       orientation: 'portrait',
-      scope: '/lazymal/',
-      start_url: '/lazymal/',
+      scope: base,
+      start_url: base,
       icons: [
         { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
         { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },

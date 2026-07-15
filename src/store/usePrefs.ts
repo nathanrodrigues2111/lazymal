@@ -24,6 +24,8 @@ interface PrefsState {
   sourceOrder: Record<Media, string[]>
   /** Source names the user has hidden from the launcher, per media. */
   hiddenSources: Record<Media, string[]>
+  /** Has the user seen (or dismissed) the first-run feature tour? */
+  toured: boolean
 
   completeOnboarding: (genres: string[]) => void
   setGenres: (genres: string[]) => void
@@ -33,6 +35,7 @@ interface PrefsState {
   clearStars: () => void
   setSourceOrder: (media: Media, order: string[]) => void
   toggleSourceHidden: (media: Media, name: string) => void
+  completeTour: () => void
 }
 
 export const usePrefs = create<PrefsState>()(
@@ -47,6 +50,7 @@ export const usePrefs = create<PrefsState>()(
       starredItems: {},
       sourceOrder: { anime: [], manga: [] },
       hiddenSources: { anime: [], manga: [] },
+      toured: false,
 
       completeOnboarding: (genres) =>
         set({ genres, onboarded: true, forYou: genres.length > 0 }),
@@ -78,6 +82,7 @@ export const usePrefs = create<PrefsState>()(
             : [...cur, name]
           return { hiddenSources: { ...s.hiddenSources, [media]: next } }
         }),
+      completeTour: () => set({ toured: true }),
     }),
     { name: 'lazymal-prefs' },
   ),

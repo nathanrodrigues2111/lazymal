@@ -53,7 +53,7 @@ export function Toolbar() {
         <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} />
       </Button>
 
-      <div className="relative">
+      <div className="relative" data-tour="sort">
         <Button
           variant="secondary"
           size="icon"

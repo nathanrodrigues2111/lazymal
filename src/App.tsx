@@ -32,6 +32,9 @@ const Settings = lazy(() =>
 const Onboarding = lazy(() =>
   import('@/components/Onboarding').then((m) => ({ default: m.Onboarding })),
 )
+const Tour = lazy(() =>
+  import('@/components/Tour').then((m) => ({ default: m.Tour })),
+)
 
 const SEASON = currentSeason()
 
@@ -44,6 +47,7 @@ export default function App() {
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
   const forYou = usePrefs((s) => s.forYou)
+  const toured = usePrefs((s) => s.toured)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Defer mounting the modal chunks until the browser is idle after first
@@ -98,7 +102,7 @@ export default function App() {
 
   // Disable pull-to-refresh while any sheet/modal is open so their own
   // drag gestures don't trigger a refresh.
-  const sheetOpen = detailOpen || settingsOpen || !onboarded
+  const sheetOpen = detailOpen || settingsOpen || !onboarded || !toured
 
   // Pull-to-refresh: re-fetch (+toast), held for ~1s so the gesture reads as a
   // real refresh even when the network is instant.
@@ -174,7 +178,7 @@ export default function App() {
           </header>
 
           {/* Content */}
-          <main className="flex-1 px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 md:px-6">
+          <main className="flex flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-4 md:px-6">
             <AnimeGrid />
           </main>
         </div>
@@ -196,6 +200,11 @@ export default function App() {
       {(modalsReady || !onboarded) && (
         <Suspense fallback={null}>
           <Onboarding />
+        </Suspense>
+      )}
+      {!toured && (
+        <Suspense fallback={null}>
+          <Tour />
         </Suspense>
       )}
       <Toast />

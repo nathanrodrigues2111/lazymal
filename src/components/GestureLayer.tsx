@@ -5,15 +5,17 @@ import { useStore } from '@/store/useStore'
 
 /**
  * One-finger gesture shortcuts (touch only, off while a sheet is open):
- *   • Diagonal swipe from the right side down to the bottom-left → For You.
- *   • Quick flick downward in the top half → focus the search bar.
- * Both are gated on direction/speed/start-region so they aren't confused with
+ *   • Diagonal from the right side down to bottom-left → For You.
+ *   • Diagonal from the left side down to bottom-right → All.
+ *   • Quick flick downward in the top 30% → focus the search bar.
+ * All gated on direction/speed/start-region so they aren't confused with
  * scrolling or the horizontal media swipe.
  */
 export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
   const canForYou = usePrefs((s) => s.genres.length > 0 || s.starred.length > 0)
+  const clearGenres = useStore((s) => s.clearGenres)
   const showToast = useStore((s) => s.showToast)
 
   const forYouRef = useRef(forYou)
@@ -53,6 +55,12 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       showToast('For You ✨')
     }
 
+    const openAll = () => {
+      clearGenres()
+      if (forYouRef.current) toggleForYou()
+      showToast('All')
+    }
+
     const onEnd = () => {
       if (!tracking) return
       tracking = false
@@ -77,9 +85,21 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
         return
       }
 
-      // --- Quick downward flick (top half) → search ------------------------
+      // --- Diagonal from the left side down to bottom-right → All -----------
       if (
-        first.y < window.innerHeight * 0.5 &&
+        first.x < window.innerWidth * 0.5 &&
+        dx > 90 &&
+        dy > 90 &&
+        ratio > 0.4 &&
+        ratio < 2.5
+      ) {
+        openAll()
+        return
+      }
+
+      // --- Quick downward flick (top 30%) → search -------------------------
+      if (
+        first.y < window.innerHeight * 0.3 &&
         dy > 110 &&
         Math.abs(dx) < dy * 0.6 &&
         dur < 400

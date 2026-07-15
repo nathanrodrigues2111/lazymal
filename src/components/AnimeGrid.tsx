@@ -161,7 +161,7 @@ export function AnimeGrid() {
   const hasMore = limit < items.length
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-1 flex-col gap-4">
       <GenreFilter genres={genres} />
 
       <ExternalSearch query={query} media={media} />
@@ -196,18 +196,20 @@ export function AnimeGrid() {
           ))}
         </div>
       ) : (
-        <Empty
-          title={q ? 'Nothing found…' : 'It’s a little empty here…'}
-          body={
-            q
-              ? `Couldn’t find any ${media} called “${q}” anywhere. Try the source buttons above to peek at the streaming sites.`
-              : `Nothing matches these filters. Tap “All” to see everything again.`
-          }
-        />
+        <div className="flex flex-1 items-center justify-center">
+          <Empty
+            title={q ? 'Nothing found…' : 'It’s a little empty here…'}
+            body={
+              q
+                ? `Couldn’t find any ${media} called “${q}” anywhere. Try the source buttons above to peek at the streaming sites.`
+                : `Nothing matches these filters. Tap “All” to see everything again.`
+            }
+          />
+        </div>
       )}
 
       {items.length > 0 && !searchMode && (
-        <p className="py-4 text-center text-xs text-muted-foreground">
+        <p className="mt-auto py-4 text-center text-xs text-muted-foreground">
           {items.length} lovely {items.length === 1 ? 'title' : 'titles'}
         </p>
       )}

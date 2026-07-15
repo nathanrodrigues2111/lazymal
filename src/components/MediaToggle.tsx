@@ -19,7 +19,10 @@ export function MediaToggle() {
   }
 
   return (
-    <div className="flex shrink-0 rounded-full border border-line bg-panel-2 p-0.5">
+    <div
+      data-tour="media"
+      className="flex shrink-0 rounded-full border border-line bg-panel-2 p-0.5"
+    >
       {OPTIONS.map((m) => {
         const active = media === m
         return (

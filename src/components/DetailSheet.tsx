@@ -87,8 +87,8 @@ function SourceRow({
           : 'cursor-pointer border-line hover:border-brand/50 hover:bg-accent active:scale-[0.99]',
       )}
     >
-      {/* Left: Play (view) <-> grip drag handle (edit) */}
-      <div className="grid shrink-0 place-items-center">
+      {/* Left: Play (view) <-> grip drag handle (edit) — fixed slot, no shift */}
+      <div className="grid size-5 shrink-0 place-items-center">
         <AnimatePresence mode="wait" initial={false}>
           {editing ? (
             <motion.button
@@ -101,7 +101,7 @@ function SourceRow({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.5 }}
               transition={iconTransition}
-              className="-m-1 grid cursor-grab touch-none place-items-center rounded-md p-1 text-muted-foreground active:cursor-grabbing"
+              className="grid size-5 cursor-grab touch-none place-items-center text-muted-foreground active:cursor-grabbing"
             >
               <GripVertical className="size-4" />
             </motion.button>
@@ -122,8 +122,8 @@ function SourceRow({
 
       <span className="flex-1">{src.name}</span>
 
-      {/* Right: ExternalLink (view) <-> eye hide toggle (edit) */}
-      <div className="grid shrink-0 place-items-center">
+      {/* Right: ExternalLink (view) <-> eye hide toggle (edit) — fixed slot */}
+      <div className="grid size-5 shrink-0 place-items-center">
         <AnimatePresence mode="wait" initial={false}>
           {editing ? (
             <motion.button
@@ -139,7 +139,7 @@ function SourceRow({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.5 }}
               transition={iconTransition}
-              className="-m-1 grid place-items-center rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+              className="grid size-5 place-items-center text-muted-foreground transition-colors hover:text-foreground"
             >
               {isHidden ? (
                 <EyeOff className="size-4" />
