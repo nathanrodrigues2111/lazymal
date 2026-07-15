@@ -385,7 +385,7 @@ export function DetailSheet() {
               )}
 
               {/* Fallback directory + link out, on one tidy row */}
-              <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+              <div className="mt-5 flex items-center justify-center gap-3 border-t border-line/60 pt-4 text-xs text-muted-foreground">
                 <a
                   href={isManga ? FMHY_READING : FMHY_VIDEO}
                   target="_blank"
