@@ -16,6 +16,7 @@ import { AnimeGrid } from '@/components/AnimeGrid'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { MediaToggle } from '@/components/MediaToggle'
 import { SwipeNav } from '@/components/SwipeNav'
+import { UGesture } from '@/components/UGesture'
 import { Toast } from '@/components/Toast'
 
 // Modals aren't needed for first paint — split them into their own chunks
@@ -179,6 +180,7 @@ export default function App() {
       </PullToRefresh>
 
       <SwipeNav disabled={sheetOpen} />
+      <UGesture disabled={sheetOpen} />
       {(modalsReady || detailOpen) && (
         <Suspense fallback={null}>
           <DetailSheet />
