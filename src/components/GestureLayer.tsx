@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils'
 /**
  * Touch shortcuts + the bottom scrim that hints at them (off while a sheet is
  * open):
- *   • Double-tap the bottom 10% of the screen → cycle For You ↔ All.
- *   • Quick flick downward in the top 40% → focus the search bar.
- * A soft black gradient marks the bottom tap zone.
+ *   • Double-tap the bottom strip → cycle For You ↔ All. The strip captures
+ *     taps (so cards underneath aren't hit) but allows vertical scrolling.
+ *   • Fast flick downward in the top 20% → focus the search bar.
  */
 export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
@@ -18,17 +18,37 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const clearGenres = useStore((s) => s.clearGenres)
   const showToast = useStore((s) => s.showToast)
 
-  const forYouRef = useRef(forYou)
-  forYouRef.current = forYou
-  const canForYouRef = useRef(canForYou)
-  canForYouRef.current = canForYou
   const disabledRef = useRef(disabled)
   disabledRef.current = disabled
 
+  // --- Bottom strip: double-tap cycles For You <-> All ---------------------
+  const lastTap = useRef(0)
+  const cycle = () => {
+    if (forYou) {
+      clearGenres()
+      toggleForYou()
+      showToast('All')
+    } else if (!canForYou) {
+      showToast('Star a title to unlock For You')
+    } else {
+      toggleForYou()
+      showToast('For You ✨')
+    }
+  }
+  const onZoneClick = (e: React.MouseEvent) => {
+    const now = e.timeStamp
+    if (now - lastTap.current < 340) {
+      lastTap.current = 0
+      cycle()
+    } else {
+      lastTap.current = now
+    }
+  }
+
+  // --- Top flick → search (window-level so it works over any content) ------
   useEffect(() => {
     let pts: { x: number; y: number; t: number }[] = []
     let tracking = false
-    let lastTap = 0
 
     const onStart = (e: TouchEvent) => {
       if (disabledRef.current) {
@@ -39,58 +59,25 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       pts = [{ x: t.clientX, y: t.clientY, t: performance.now() }]
       tracking = true
     }
-
     const onMove = (e: TouchEvent) => {
       if (!tracking) return
       const t = e.touches[0]
       pts.push({ x: t.clientX, y: t.clientY, t: performance.now() })
       if (pts.length > 400) pts.shift()
     }
-
-    const openForYou = () => {
-      if (!canForYouRef.current) {
-        showToast('Star a title to unlock For You')
-        return
-      }
-      if (!forYouRef.current) toggleForYou()
-      showToast('For You ✨')
-    }
-
-    const openAll = () => {
-      clearGenres()
-      if (forYouRef.current) toggleForYou()
-      showToast('All')
-    }
-
     const onEnd = () => {
       if (!tracking) return
       tracking = false
       if (pts.length === 0) return
-
       const first = pts[0]
       const last = pts[pts.length - 1]
       const dx = last.x - first.x
       const dy = last.y - first.y
       const dur = last.t - first.t
-      const moved = Math.hypot(dx, dy)
-
-      // Double-tap in the bottom 10% → cycle For You ↔ All.
-      if (moved < 16 && dur < 260 && first.y > window.innerHeight * 0.9) {
-        const now = last.t
-        if (now - lastTap < 340) {
-          lastTap = 0
-          if (forYouRef.current) openAll()
-          else openForYou()
-        } else {
-          lastTap = now
-        }
-        return
-      }
-
-      // Fast downward flick in the top 20% → focus the search bar. Requires
-      // real velocity so a slow hold-and-pull (pull-to-refresh) never triggers
-      // it, and a small region so it doesn't fire mid-scroll.
       const velocity = dy / Math.max(1, dur) // px per ms
+
+      // Fast downward flick in the top 20% → focus search. Velocity gate keeps a
+      // slow hold-and-pull (pull-to-refresh) from triggering it.
       if (
         first.y < window.innerHeight * 0.2 &&
         dy > 90 &&
@@ -103,8 +90,6 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
         ) as HTMLInputElement | null
         if (!el) return
         if (document.activeElement === el) {
-          // Already on search — re-assert focus so a dismissed keyboard comes
-          // back, without the disruptive scroll-to-top.
           el.blur()
           el.focus()
         } else {
@@ -124,15 +109,18 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       window.removeEventListener('touchend', onEnd)
       window.removeEventListener('touchcancel', onEnd)
     }
-  }, [toggleForYou, clearGenres, showToast])
+  }, [])
 
-  // Bottom scrim marking the double-tap zone; fades out while a sheet is open.
+  // Bottom strip: captures taps (cards underneath stay untouched) but permits
+  // vertical scrolling via touch-action. Mobile only; fades out with a sheet.
   return (
     <div
       aria-hidden
+      onClick={onZoneClick}
+      style={{ touchAction: 'pan-y' }}
       className={cn(
-        'pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[18vh] bg-gradient-to-t from-ink via-ink/45 to-transparent transition-opacity duration-300 [@media(pointer:fine)]:hidden',
-        disabled ? 'opacity-0' : 'opacity-100',
+        'fixed inset-x-0 bottom-0 z-30 h-[10vh] bg-gradient-to-t from-ink via-ink/45 to-transparent transition-opacity duration-300 [@media(pointer:fine)]:hidden',
+        disabled ? 'pointer-events-none opacity-0' : 'opacity-100',
       )}
     />
   )
