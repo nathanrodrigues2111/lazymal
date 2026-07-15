@@ -161,6 +161,15 @@ export function DetailSheet() {
                       <Copy className="size-4" />
                     )}
                   </button>
+                  <a
+                    href={shown.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label="View on MyAnimeList"
+                    className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:text-foreground active:scale-90"
+                  >
+                    <ExternalLink className="size-4" />
+                  </a>
                 </div>
                 {(() => {
                   const displayed = shown.title_english || shown.title
@@ -410,8 +419,8 @@ export function DetailSheet() {
                 </p>
               )}
 
-              {/* Fallback directory + link out, on one tidy row */}
-              <div className="mt-7 flex items-center justify-center gap-3 border-t border-line/60 pt-5 text-xs text-muted-foreground">
+              {/* Fallback directory link (MyAnimeList lives in the header). */}
+              <div className="mt-7 flex items-center justify-center border-t border-line/60 pt-5 text-xs text-muted-foreground">
                 <a
                   href={isManga ? FMHY_READING : FMHY_VIDEO}
                   target="_blank"
@@ -419,15 +428,6 @@ export function DetailSheet() {
                   className="transition-colors hover:text-foreground"
                 >
                   More Sites ↗
-                </a>
-                <span className="text-line">·</span>
-                <a
-                  href={shown.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="transition-colors hover:text-foreground"
-                >
-                  MyAnimeList ↗
                 </a>
               </div>
             </div>
