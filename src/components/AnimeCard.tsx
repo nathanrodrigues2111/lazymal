@@ -57,7 +57,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
 
       {/* MAL score */}
-      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md">
+      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-bold text-white">
         <Star className="size-3 fill-yellow-400 text-yellow-400" />
         {anime.score ? anime.score.toFixed(2) : 'N/A'}
       </div>
@@ -78,7 +78,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
           e.stopPropagation()
           toggleStar(media, anime)
         }}
-        className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/55 backdrop-blur-md transition-transform hover:scale-110 active:scale-90"
+        className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/65 transition-transform hover:scale-110 active:scale-90"
       >
         <Star
           className={cn(
@@ -95,7 +95,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
         </h3>
         <div className="flex flex-wrap items-center gap-1">
           {anime.type && (
-            <span className="flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-sm">
+            <span className="flex items-center gap-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
               {isManga ? (
                 <BookOpen className="size-2.5" />
               ) : (
@@ -108,7 +108,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
           {topGenres.map((g) => (
             <span
               key={g.mal_id}
-              className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm"
+              className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white/90"
             >
               {g.name}
             </span>
