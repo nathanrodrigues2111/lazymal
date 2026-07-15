@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button'
 
 const GRID =
   'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5 xl:grid-cols-6'
+
+// How many cards to reveal per scroll batch.
+const PAGE = 24
 
 export function AnimeGrid() {
   const anime = useStore((s) => s.anime)
@@ -93,6 +96,34 @@ export function AnimeGrid() {
     return () => clearTimeout(t)
   }, [query, forYou, media])
 
+  // Progressive rendering: only mount a batch of cards, appending more as the
+  // sentinel nears the viewport. Keeps the DOM small and the first paint cheap
+  // even on lists of hundreds — critical for weaker devices.
+  const q = query.trim()
+  const searchMode = !!q && !forYou
+  const items = searchMode ? remote : visible
+
+  const [limit, setLimit] = useState(PAGE)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+
+  // Reset the window whenever the underlying list changes (filter, tab, search).
+  useEffect(() => {
+    setLimit(PAGE)
+  }, [items])
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setLimit((l) => l + PAGE)
+      },
+      { rootMargin: '800px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [items])
+
   if (status === 'loading') return <GridSkeleton />
 
   if (status === 'error') {
@@ -109,9 +140,8 @@ export function AnimeGrid() {
     )
   }
 
-  const q = query.trim()
-  const searchMode = !!q && !forYou
-  const items = searchMode ? remote : visible
+  const shown = items.slice(0, limit)
+  const hasMore = limit < items.length
 
   return (
     <div className="space-y-4">
@@ -128,17 +158,20 @@ export function AnimeGrid() {
       )}
 
       {items.length > 0 ? (
-        <div className={GRID}>
-          {items.map((a, i) => (
-            <AnimeCard
-              key={a.mal_id}
-              anime={a}
-              index={i}
-              matched={!forYou && favorites.length > 0 && isMatch(a, favorites)}
-              onSelect={select}
-            />
-          ))}
-        </div>
+        <>
+          <div className={GRID}>
+            {shown.map((a, i) => (
+              <AnimeCard
+                key={a.mal_id}
+                anime={a}
+                index={i}
+                matched={!forYou && favorites.length > 0 && isMatch(a, favorites)}
+                onSelect={select}
+              />
+            ))}
+          </div>
+          {hasMore && <div ref={sentinelRef} aria-hidden className="h-1 w-full" />}
+        </>
       ) : searching ? (
         <div className={GRID}>
           {Array.from({ length: 6 }).map((_, i) => (
