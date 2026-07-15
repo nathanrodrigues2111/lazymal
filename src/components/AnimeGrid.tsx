@@ -87,13 +87,20 @@ export function AnimeGrid() {
       setSearching(false)
       return
     }
+    let cancelled = false
     setSearching(true)
+    // Wait until typing settles before hitting the network, and ignore any
+    // in-flight response for a query the user has already moved past.
     const t = setTimeout(async () => {
       const r = await searchTitles(q, media)
+      if (cancelled) return
       setRemote(r)
       setSearching(false)
-    }, 400)
-    return () => clearTimeout(t)
+    }, 550)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
   }, [query, forYou, media])
 
   // Progressive rendering: only mount a batch of cards, appending more as the
