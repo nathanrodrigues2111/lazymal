@@ -25,7 +25,7 @@ const STEPS: Step[] = [
   },
   {
     title: 'Search',
-    body: 'Tap here to find any title across all genres. On mobile you can also flick down from the top of the screen to jump straight to search.',
+    body: 'Tap here to find any title across all genres. On mobile you can also give a quick flick downward near the very top of the screen to jump straight to search.',
     selector: '#app-search',
   },
   {
@@ -35,7 +35,7 @@ const STEPS: Step[] = [
   },
   {
     title: 'Genres, For You & All',
-    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “All” resets. Shortcut: swipe diagonally down-left for For You, down-right for All.',
+    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “All” resets. Shortcut: double-tap the bottom of the screen to cycle between For You and All.',
     selector: '[data-tour="genres"]',
   },
   {

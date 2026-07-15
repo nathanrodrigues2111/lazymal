@@ -2,13 +2,14 @@ import { useEffect, useRef } from 'react'
 
 import { usePrefs } from '@/store/usePrefs'
 import { useStore } from '@/store/useStore'
+import { cn } from '@/lib/utils'
 
 /**
- * One-finger gesture shortcuts (touch only, off while a sheet is open):
- *   • Diagonal swipe down-left → For You (up-right, the reverse → All).
- *   • Quick flick downward in the top 35% → focus the search bar.
- * All gated on direction/speed/start-region so they aren't confused with
- * scrolling or the horizontal media swipe.
+ * Touch shortcuts + the bottom scrim that hints at them (off while a sheet is
+ * open):
+ *   • Double-tap the bottom 10% of the screen → cycle For You ↔ All.
+ *   • Quick flick downward in the top 40% → focus the search bar.
+ * A soft black gradient marks the bottom tap zone.
  */
 export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
@@ -27,6 +28,7 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   useEffect(() => {
     let pts: { x: number; y: number; t: number }[] = []
     let tracking = false
+    let lastTap = 0
 
     const onStart = (e: TouchEvent) => {
       if (disabledRef.current) {
@@ -63,39 +65,38 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     const onEnd = () => {
       if (!tracking) return
       tracking = false
-      if (pts.length < 4) return
+      if (pts.length === 0) return
 
       const first = pts[0]
       const last = pts[pts.length - 1]
-      const dx = last.x - first.x // - = leftward
-      const dy = last.y - first.y // + = downward
+      const dx = last.x - first.x
+      const dy = last.y - first.y
       const dur = last.t - first.t
-      const ratio = Math.abs(dx) / Math.max(1, Math.abs(dy))
+      const moved = Math.hypot(dx, dy)
 
-      // Diagonal along the "/" axis — balanced slant (not a vertical scroll,
-      // not the more horizontal media swipe which needs ratio > 1.6). Swipe
-      // down-left → For You; the reverse, up-right → All.
-      const slant =
-        ratio > 0.5 &&
-        ratio < 1.5 &&
-        Math.abs(dx) > 70 &&
-        Math.abs(dy) > 70
-
-      if (slant && dx < 0 && dy > 0) {
-        openForYou()
-        return
-      }
-      if (slant && dx > 0 && dy < 0) {
-        openAll()
+      // Double-tap in the bottom 10% → cycle For You ↔ All.
+      if (moved < 16 && dur < 260 && first.y > window.innerHeight * 0.9) {
+        const now = last.t
+        if (now - lastTap < 340) {
+          lastTap = 0
+          if (forYouRef.current) openAll()
+          else openForYou()
+        } else {
+          lastTap = now
+        }
         return
       }
 
-      // --- Quick downward flick (top 35%) → search -------------------------
+      // Fast downward flick in the top 20% → focus the search bar. Requires
+      // real velocity so a slow hold-and-pull (pull-to-refresh) never triggers
+      // it, and a small region so it doesn't fire mid-scroll.
+      const velocity = dy / Math.max(1, dur) // px per ms
       if (
-        first.y < window.innerHeight * 0.35 &&
-        dy > 110 &&
+        first.y < window.innerHeight * 0.2 &&
+        dy > 90 &&
         Math.abs(dx) < dy * 0.6 &&
-        dur < 400
+        dur < 300 &&
+        velocity > 0.6
       ) {
         const el = document.getElementById(
           'app-search',
@@ -123,7 +124,16 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       window.removeEventListener('touchend', onEnd)
       window.removeEventListener('touchcancel', onEnd)
     }
-  }, [toggleForYou, showToast])
+  }, [toggleForYou, clearGenres, showToast])
 
-  return null
+  // Bottom scrim marking the double-tap zone; fades out while a sheet is open.
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        'pointer-events-none fixed inset-x-0 bottom-0 z-30 h-[18vh] bg-gradient-to-t from-ink via-ink/45 to-transparent transition-opacity duration-300 [@media(pointer:fine)]:hidden',
+        disabled ? 'opacity-0' : 'opacity-100',
+      )}
+    />
+  )
 }
