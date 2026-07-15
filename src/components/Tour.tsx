@@ -30,7 +30,7 @@ const STEPS: Step[] = [
   },
   {
     title: 'Sort',
-    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. On mobile, tap the bottom-right of the screen to cycle through these.',
+    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. On mobile, tap the bottom-right of the screen to open this menu.',
     selector: '[data-tour="sort"]',
   },
   {

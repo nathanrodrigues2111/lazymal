@@ -1,17 +1,13 @@
 import { usePrefs } from '@/store/usePrefs'
 import { useStore } from '@/store/useStore'
-import { SORT_LABELS } from '@/lib/filter'
-import type { SortKey } from '@/lib/types'
 import { cn } from '@/lib/utils'
-
-const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[]
 
 /**
  * Mobile bottom bar (a soft gradient scrim, off while a sheet is open) split
  * into three invisible tap zones:
  *   • Left   → cycle For You ↔ All
  *   • Center → Search
- *   • Right  → cycle the sort (airing soon, top rated, …)
+ *   • Right  → open the sort menu
  * Zones capture taps so cards underneath aren't hit; `touch-action: pan-y`
  * still lets you scroll through it.
  */
@@ -20,8 +16,6 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const toggleForYou = usePrefs((s) => s.toggleForYou)
   const canForYou = usePrefs((s) => s.genres.length > 0 || s.starred.length > 0)
   const clearGenres = useStore((s) => s.clearGenres)
-  const sort = useStore((s) => s.sort)
-  const setSort = useStore((s) => s.setSort)
   const showToast = useStore((s) => s.showToast)
 
   const cycleForYou = () => {
@@ -43,11 +37,14 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     el?.focus()
   }
 
-  const cycleSort = () => {
-    const i = SORT_KEYS.indexOf(sort)
-    const next = SORT_KEYS[(i + 1) % SORT_KEYS.length]
-    setSort(next)
-    showToast(SORT_LABELS[next])
+  const openSort = () => {
+    // Reuse the real sort button so the actual dropdown opens — no toast to
+    // squint at.
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    const btn = document.querySelector(
+      '[data-tour="sort"] button',
+    ) as HTMLButtonElement | null
+    btn?.click()
   }
 
   const zone = 'touch-pan-y'
@@ -73,8 +70,8 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       />
       <button
         type="button"
-        aria-label="Cycle sort order"
-        onClick={cycleSort}
+        aria-label="Open sort menu"
+        onClick={openSort}
         className={zone}
       />
     </div>
