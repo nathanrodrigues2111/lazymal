@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import {
   AnimatePresence,
   motion,
@@ -13,13 +13,23 @@ import { usePrefs } from '@/store/usePrefs'
 import { currentSeason, seasonLabel } from '@/lib/season'
 import { Toolbar } from '@/components/Toolbar'
 import { AnimeGrid } from '@/components/AnimeGrid'
-import { DetailSheet } from '@/components/DetailSheet'
-import { Onboarding } from '@/components/Onboarding'
-import { Settings } from '@/components/Settings'
 import { PullToRefresh } from '@/components/PullToRefresh'
 import { MediaToggle } from '@/components/MediaToggle'
 import { SwipeNav } from '@/components/SwipeNav'
 import { Toast } from '@/components/Toast'
+
+// Modals aren't needed for first paint — split them into their own chunks
+// (which also carry the heavy `vaul` drawer) and mount them during idle time,
+// so the app shell parses and paints with the smallest possible bundle.
+const DetailSheet = lazy(() =>
+  import('@/components/DetailSheet').then((m) => ({ default: m.DetailSheet })),
+)
+const Settings = lazy(() =>
+  import('@/components/Settings').then((m) => ({ default: m.Settings })),
+)
+const Onboarding = lazy(() =>
+  import('@/components/Onboarding').then((m) => ({ default: m.Onboarding })),
+)
 
 const SEASON = currentSeason()
 
@@ -31,6 +41,19 @@ export default function App() {
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Defer mounting the modal chunks until the browser is idle after first
+  // paint, keeping them (and their heavy `vaul` drawer) off the boot path.
+  const [modalsReady, setModalsReady] = useState(false)
+  useEffect(() => {
+    const ric = window.requestIdleCallback
+    if (ric) {
+      const id = ric(() => setModalsReady(true))
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = setTimeout(() => setModalsReady(true), 200)
+    return () => clearTimeout(id)
+  }, [])
 
   const isManga = media === 'manga'
 
@@ -131,9 +154,21 @@ export default function App() {
       </PullToRefresh>
 
       <SwipeNav disabled={sheetOpen} />
-      <DetailSheet />
-      <Settings open={settingsOpen} onOpenChange={setSettingsOpen} />
-      <Onboarding />
+      {(modalsReady || detailOpen) && (
+        <Suspense fallback={null}>
+          <DetailSheet />
+        </Suspense>
+      )}
+      {(modalsReady || settingsOpen) && (
+        <Suspense fallback={null}>
+          <Settings open={settingsOpen} onOpenChange={setSettingsOpen} />
+        </Suspense>
+      )}
+      {(modalsReady || !onboarded) && (
+        <Suspense fallback={null}>
+          <Onboarding />
+        </Suspense>
+      )}
       <Toast />
     </>
   )

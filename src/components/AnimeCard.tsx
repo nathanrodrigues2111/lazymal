@@ -19,8 +19,13 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
   const starred = usePrefs((s) => s.starred.includes(key))
   const toggleStar = usePrefs((s) => s.toggleStar)
 
+  // Grid cards are small (2–6 columns) — the medium image is visually identical
+  // at this size and roughly half the bytes/decode cost of the large one.
   const poster =
-    anime.images.webp?.large_image_url || anime.images.jpg.large_image_url
+    anime.images.webp?.image_url || anime.images.jpg.image_url
+  // The first row is above the fold: load it eagerly at high priority so it
+  // isn't held back by lazy-loading, which improves LCP.
+  const priority = index < 6
   const title = anime.title_english || anime.title
   const topGenres = anime.genres.slice(0, 2)
   const isManga = anime.publishing !== undefined || anime.chapters !== undefined
@@ -43,7 +48,8 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
       <img
         src={poster}
         alt={title}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
