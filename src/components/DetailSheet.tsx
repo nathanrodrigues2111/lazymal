@@ -39,21 +39,29 @@ import {
 } from '@/components/ui/drawer'
 
 /**
- * A single draggable row in the source reorder list. Uses an explicit drag
- * handle (the grip) via `useDragControls` so drag-to-reorder works with both
- * mouse (desktop) and touch — the default `Reorder.Item` press-listener is
- * unreliable with a mouse here.
+ * A single source row, stable across view/edit so its icons animate in place.
+ * View mode: tap to open the launcher. Edit mode: drag the grip to reorder
+ * (via `useDragControls`, which works with mouse + touch), and toggle the eye
+ * to hide/show. `data-vaul-no-drag` stops the grip from dragging the sheet.
  */
 function SourceRow({
   src,
+  editing,
   isHidden,
+  href,
   onToggleHide,
 }: {
   src: WatchSource
+  editing: boolean
   isHidden: boolean
+  href: string
   onToggleHide: () => void
 }) {
   const controls = useDragControls()
+  const open = () => {
+    if (!editing) window.open(href, '_blank', 'noopener,noreferrer')
+  }
+  const iconTransition = { duration: 0.12, ease: [0.22, 1, 0.36, 1] as const }
   return (
     <Reorder.Item
       value={src.name}
@@ -61,50 +69,98 @@ function SourceRow({
       dragControls={controls}
       data-vaul-no-drag
       whileDrag={{ scale: 1.03 }}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (!editing && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          open()
+        }
+      }}
+      role={editing ? undefined : 'link'}
+      tabIndex={editing ? undefined : 0}
       className={cn(
-        'flex select-none items-center gap-2.5 rounded-xl border bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground',
-        isHidden ? 'border-line opacity-45' : 'border-brand/40',
+        'flex select-none items-center gap-2.5 rounded-xl border bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors',
+        editing
+          ? isHidden
+            ? 'border-line opacity-45'
+            : 'border-brand/40'
+          : 'cursor-pointer border-line hover:border-brand/50 hover:bg-accent active:scale-[0.99]',
       )}
     >
-      <button
-        type="button"
-        onPointerDown={(e) => controls.start(e)}
-        aria-label={`Drag to reorder ${src.name}`}
-        className="-m-1 grid shrink-0 cursor-grab touch-none place-items-center p-1 text-muted-foreground active:cursor-grabbing"
-      >
-        <GripVertical className="size-4 shrink-0" />
-      </button>
-      <span className="flex-1">{src.name}</span>
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation()
-          onToggleHide()
-        }}
-        aria-label={isHidden ? `Show ${src.name}` : `Hide ${src.name}`}
-        className="-m-1 grid shrink-0 place-items-center rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground"
-      >
+      {/* Left: Play (view) <-> grip drag handle (edit) */}
+      <div className="grid shrink-0 place-items-center">
         <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={isHidden ? 'off' : 'on'}
-            initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.5, rotate: 30 }}
-            transition={{
-              type: 'spring',
-              stiffness: 500,
-              damping: 30,
-            }}
-            className="grid place-items-center"
-          >
-            {isHidden ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </motion.span>
+          {editing ? (
+            <motion.button
+              type="button"
+              key="grip"
+              onPointerDown={(e) => controls.start(e)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Drag to reorder ${src.name}`}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={iconTransition}
+              className="-m-1 grid cursor-grab touch-none place-items-center rounded-md p-1 text-muted-foreground active:cursor-grabbing"
+            >
+              <GripVertical className="size-4" />
+            </motion.button>
+          ) : (
+            <motion.span
+              key="play"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={iconTransition}
+              className="grid place-items-center"
+            >
+              <Play className="size-4 fill-brand text-brand" />
+            </motion.span>
+          )}
         </AnimatePresence>
-      </button>
+      </div>
+
+      <span className="flex-1">{src.name}</span>
+
+      {/* Right: ExternalLink (view) <-> eye hide toggle (edit) */}
+      <div className="grid shrink-0 place-items-center">
+        <AnimatePresence mode="wait" initial={false}>
+          {editing ? (
+            <motion.button
+              type="button"
+              key={isHidden ? 'off' : 'on'}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggleHide()
+              }}
+              aria-label={isHidden ? `Show ${src.name}` : `Hide ${src.name}`}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={iconTransition}
+              className="-m-1 grid place-items-center rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {isHidden ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
+            </motion.button>
+          ) : (
+            <motion.span
+              key="ext"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              transition={iconTransition}
+              className="grid place-items-center"
+            >
+              <ExternalLink className="size-3.5 text-muted-foreground" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
     </Reorder.Item>
   )
 }
@@ -384,10 +440,10 @@ export function DetailSheet() {
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
                       key={editingSources ? 'check' : 'pencil'}
-                      initial={{ opacity: 0, scale: 0.5, rotate: -40 }}
+                      initial={{ opacity: 0, scale: 0.6, rotate: -30 }}
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.5, rotate: 40 }}
-                      transition={{ type: 'spring', stiffness: 900, damping: 32, mass: 0.5 }}
+                      exit={{ opacity: 0, scale: 0.6, rotate: 30 }}
+                      transition={{ duration: 0.11, ease: [0.22, 1, 0.36, 1] }}
                       className="grid place-items-center"
                     >
                       {editingSources ? (
@@ -399,47 +455,33 @@ export function DetailSheet() {
                   </AnimatePresence>
                 </button>
               </div>
-              {editingSources ? (
+              {!editingSources && visibleSources.length === 0 ? (
+                <p className="rounded-xl border border-line bg-panel-2 px-4 py-3 text-center text-xs text-muted-foreground">
+                  All sources hidden — tap the pencil to bring them back.
+                </p>
+              ) : (
                 <Reorder.Group
                   axis="y"
-                  values={sources.map((s) => s.name)}
+                  values={(editingSources ? sources : visibleSources).map(
+                    (s) => s.name,
+                  )}
                   onReorder={(next) => setSourceOrder(mediaKey, next)}
                   className="flex flex-col gap-2"
                 >
-                  {sources.map((src) => (
+                  {(editingSources ? sources : visibleSources).map((src) => (
                     <SourceRow
                       key={src.name}
                       src={src}
+                      editing={editingSources}
                       isHidden={hidden.includes(src.name)}
-                      onToggleHide={() =>
-                        toggleSourceHidden(mediaKey, src.name)
-                      }
-                    />
-                  ))}
-                </Reorder.Group>
-              ) : visibleSources.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {visibleSources.map((src) => (
-                    <a
-                      key={src.name}
                       href={src.build({
                         romaji: shown.title,
                         english: shown.title_english,
                       })}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="flex items-center gap-2.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/50 hover:bg-accent active:scale-[0.99]"
-                    >
-                      <Play className="size-4 shrink-0 fill-brand text-brand" />
-                      <span className="flex-1">{src.name}</span>
-                      <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
-                    </a>
+                      onToggleHide={() => toggleSourceHidden(mediaKey, src.name)}
+                    />
                   ))}
-                </div>
-              ) : (
-                <p className="rounded-xl border border-line bg-panel-2 px-4 py-3 text-center text-xs text-muted-foreground">
-                  All sources hidden — tap the pencil to bring them back.
-                </p>
+                </Reorder.Group>
               )}
 
               {/* Fallback directory + MyAnimeList, two equal pills. */}

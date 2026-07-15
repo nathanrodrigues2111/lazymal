@@ -38,8 +38,10 @@ export default function App() {
   const refresh = useStore((s) => s.refresh)
   const prewarmOther = useStore((s) => s.prewarmOther)
   const media = useStore((s) => s.media)
+  const query = useStore((s) => s.query)
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
+  const forYou = usePrefs((s) => s.forYou)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Defer mounting the modal chunks until the browser is idle after first
@@ -56,6 +58,16 @@ export default function App() {
   }, [])
 
   const isManga = media === 'manga'
+
+  // Header subtitle reflects what the grid is actually showing, so it isn't a
+  // misleading "Summer 2026" while searching or on the For You tab.
+  const headerSubtitle = query.trim()
+    ? 'Search results'
+    : forYou
+      ? 'For You'
+      : isManga
+        ? 'Top manga'
+        : seasonLabel(SEASON)
 
   // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
   // Sakura does one smooth full spin the moment the page scroll touches the
@@ -135,7 +147,7 @@ export default function App() {
                         {isManga ? 'Manga' : 'Anime'}
                       </p>
                       <p className="text-xs font-medium text-brand">
-                        {isManga ? 'Top manga' : seasonLabel(SEASON)}
+                        {headerSubtitle}
                       </p>
                     </motion.div>
                   </AnimatePresence>
