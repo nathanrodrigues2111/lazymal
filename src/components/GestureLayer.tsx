@@ -5,10 +5,10 @@ import { useStore } from '@/store/useStore'
 
 /**
  * One-finger gesture shortcuts (touch only, off while a sheet is open):
- *   • Draw a circle          → jump to the For You tab.
- *   • Quick flick downward    → focus the search bar (Spotlight-style).
- * A circle can't be confused with scrolling; the search flick is gated on
- * speed + distance so it isn't tripped by ordinary scrolls.
+ *   • Diagonal swipe from the right side down to the bottom-left → For You.
+ *   • Quick flick downward in the top half → focus the search bar.
+ * Both are gated on direction/speed/start-region so they aren't confused with
+ * scrolling or the horizontal media swipe.
  */
 export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
@@ -44,13 +44,6 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       if (pts.length > 400) pts.shift()
     }
 
-    const focusSearch = () => {
-      const el = document.getElementById('app-search') as HTMLInputElement | null
-      if (!el) return
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      el.focus()
-    }
-
     const openForYou = () => {
       if (!canForYouRef.current) {
         showToast('Star a title to unlock For You')
@@ -65,43 +58,45 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       tracking = false
       if (pts.length < 4) return
 
-      const xs = pts.map((p) => p.x)
-      const ys = pts.map((p) => p.y)
-      const w = Math.max(...xs) - Math.min(...xs)
-      const h = Math.max(...ys) - Math.min(...ys)
-
-      // --- Circle → For You -------------------------------------------------
-      if (
-        pts.length >= 12 &&
-        w > 60 &&
-        h > 60 &&
-        Math.min(w, h) / Math.max(w, h) >= 0.45
-      ) {
-        const cx = xs.reduce((a, b) => a + b, 0) / xs.length
-        const cy = ys.reduce((a, b) => a + b, 0) / ys.length
-        let total = 0
-        let prev = Math.atan2(pts[0].y - cy, pts[0].x - cx)
-        for (let i = 1; i < pts.length; i++) {
-          let d = Math.atan2(pts[i].y - cy, pts[i].x - cx) - prev
-          while (d > Math.PI) d -= 2 * Math.PI
-          while (d < -Math.PI) d += 2 * Math.PI
-          total += d
-          prev += d
-        }
-        if (Math.abs(total) >= 5.0) {
-          openForYou()
-          return
-        }
-      }
-
-      // --- Quick downward flick → search -----------------------------------
       const first = pts[0]
       const last = pts[pts.length - 1]
+      const dx = last.x - first.x // - = leftward
       const dy = last.y - first.y // + = downward
-      const dx = Math.abs(last.x - first.x)
       const dur = last.t - first.t
-      if (dy > 110 && dx < dy * 0.6 && dur < 400) {
-        focusSearch()
+      const ratio = Math.abs(dx) / Math.max(1, Math.abs(dy))
+
+      // --- Diagonal from the right side down to bottom-left → For You -------
+      if (
+        first.x > window.innerWidth * 0.5 &&
+        dx < -90 &&
+        dy > 90 &&
+        ratio > 0.4 &&
+        ratio < 2.5
+      ) {
+        openForYou()
+        return
+      }
+
+      // --- Quick downward flick (top half) → search ------------------------
+      if (
+        first.y < window.innerHeight * 0.5 &&
+        dy > 110 &&
+        Math.abs(dx) < dy * 0.6 &&
+        dur < 400
+      ) {
+        const el = document.getElementById(
+          'app-search',
+        ) as HTMLInputElement | null
+        if (!el) return
+        if (document.activeElement === el) {
+          // Already on search — re-assert focus so a dismissed keyboard comes
+          // back, without the disruptive scroll-to-top.
+          el.blur()
+          el.focus()
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+          el.focus()
+        }
       }
     }
 

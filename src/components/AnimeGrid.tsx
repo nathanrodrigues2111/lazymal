@@ -201,7 +201,7 @@ export function AnimeGrid() {
 
       {items.length > 0 && !searchMode && (
         <p className="py-4 text-center text-xs text-muted-foreground">
-          {items.length} lovely titles
+          {items.length} lovely {items.length === 1 ? 'title' : 'titles'}
         </p>
       )}
     </div>

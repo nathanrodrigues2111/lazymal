@@ -17,6 +17,7 @@ import { PullToRefresh } from '@/components/PullToRefresh'
 import { MediaToggle } from '@/components/MediaToggle'
 import { SwipeNav } from '@/components/SwipeNav'
 import { GestureLayer } from '@/components/GestureLayer'
+import { SearchClose } from '@/components/SearchClose'
 import { Toast } from '@/components/Toast'
 
 // Modals aren't needed for first paint — split them into their own chunks
@@ -181,6 +182,7 @@ export default function App() {
 
       <SwipeNav disabled={sheetOpen} />
       <GestureLayer disabled={sheetOpen} />
+      <SearchClose />
       {(modalsReady || detailOpen) && (
         <Suspense fallback={null}>
           <DetailSheet />
