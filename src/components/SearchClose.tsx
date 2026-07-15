@@ -18,25 +18,30 @@ export function SearchClose() {
 
   useEffect(() => {
     const vv = window.visualViewport
-    if (!vv) return
     const update = () => {
-      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      const offset = vv
+        ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+        : 0
       setKb(offset)
-      const open = offset > 120
+      const open = offset > 80
+      // The moment the keyboard closes, drop the search focus/highlight —
+      // even if nothing was typed.
       if (kbOpenRef.current && !open) {
         const el = document.getElementById(
           'app-search',
         ) as HTMLInputElement | null
-        if (el && document.activeElement === el) el.blur()
+        el?.blur()
       }
       kbOpenRef.current = open
     }
     update()
-    vv.addEventListener('resize', update)
-    vv.addEventListener('scroll', update)
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
+    window.addEventListener('resize', update)
     return () => {
-      vv.removeEventListener('resize', update)
-      vv.removeEventListener('scroll', update)
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
     }
   }, [])
 

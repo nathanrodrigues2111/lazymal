@@ -73,26 +73,18 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       const dur = last.t - first.t
       const ratio = Math.abs(dx) / Math.max(1, Math.abs(dy))
 
-      // --- Diagonal from the right side down to bottom-left → For You -------
-      if (
-        first.x > window.innerWidth * 0.5 &&
-        dx < -90 &&
-        dy > 90 &&
-        ratio > 0.4 &&
-        ratio < 2.5
-      ) {
+      // Diagonal band: clearly slanted (not a vertical scroll, not the more
+      // horizontal media swipe which needs ratio > 1.6). Direction decides which.
+      const diagonal = dy > 80 && ratio > 0.5 && ratio < 1.5
+
+      // Down-left → For You.
+      if (diagonal && dx < 0) {
         openForYou()
         return
       }
 
-      // --- Diagonal from the left side down to bottom-right → All -----------
-      if (
-        first.x < window.innerWidth * 0.5 &&
-        dx > 90 &&
-        dy > 90 &&
-        ratio > 0.4 &&
-        ratio < 2.5
-      ) {
+      // Down-right → All.
+      if (diagonal && dx > 0) {
         openAll()
         return
       }
