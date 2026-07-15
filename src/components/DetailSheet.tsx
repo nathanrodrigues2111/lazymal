@@ -161,15 +161,6 @@ export function DetailSheet() {
                       <Copy className="size-4" />
                     )}
                   </button>
-                  <a
-                    href={shown.url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    aria-label="View on MyAnimeList"
-                    className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:text-foreground active:scale-90"
-                  >
-                    <ExternalLink className="size-4" />
-                  </a>
                 </div>
                 {(() => {
                   const displayed = shown.title_english || shown.title
@@ -419,15 +410,25 @@ export function DetailSheet() {
                 </p>
               )}
 
-              {/* Fallback directory link (MyAnimeList lives in the header). */}
-              <div className="mt-7 flex items-center justify-center border-t border-line/60 pt-5 text-xs text-muted-foreground">
+              {/* Fallback directory + MyAnimeList, two equal pills. */}
+              <div className="mt-7 grid grid-cols-2 gap-2 border-t border-line/60 pt-5">
                 <a
                   href={isManga ? FMHY_READING : FMHY_VIDEO}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="transition-colors hover:text-foreground"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/50 hover:bg-accent active:scale-[0.99]"
                 >
-                  More Sites ↗
+                  More Sites
+                  <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                </a>
+                <a
+                  href={shown.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/50 hover:bg-accent active:scale-[0.99]"
+                >
+                  MyAnimeList
+                  <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
                 </a>
               </div>
             </div>
