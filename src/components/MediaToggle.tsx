@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'motion/react'
 
 import { useStore } from '@/store/useStore'
@@ -6,7 +7,7 @@ import { cn } from '@/lib/utils'
 
 const OPTIONS: Media[] = ['anime', 'manga']
 
-export function MediaToggle() {
+function MediaToggleBase() {
   const media = useStore((s) => s.media)
   const setMedia = useStore((s) => s.setMedia)
 
@@ -48,3 +49,5 @@ export function MediaToggle() {
     </div>
   )
 }
+
+export const MediaToggle = memo(MediaToggleBase)
