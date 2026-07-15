@@ -84,6 +84,30 @@ export const READ_SOURCES: WatchSource[] = [
   },
 ]
 
+/**
+ * Reorder `base` sources to match a saved list of names. Names no longer in
+ * `base` are dropped; sources missing from `order` (e.g. newly added ones) are
+ * appended in their natural position so nothing silently disappears.
+ */
+export function orderSources(
+  base: WatchSource[],
+  order: string[] | undefined,
+): WatchSource[] {
+  if (!order || order.length === 0) return base
+  const byName = new Map(base.map((s) => [s.name, s]))
+  const seen = new Set<string>()
+  const out: WatchSource[] = []
+  for (const name of order) {
+    const s = byName.get(name)
+    if (s && !seen.has(name)) {
+      out.push(s)
+      seen.add(name)
+    }
+  }
+  for (const s of base) if (!seen.has(s.name)) out.push(s)
+  return out
+}
+
 export type SiteStatus = 'checking' | 'up' | 'down'
 
 /**

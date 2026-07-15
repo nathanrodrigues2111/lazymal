@@ -19,6 +19,9 @@ interface PrefsState {
   /** Full starred items so favorites (incl. searched ones) show in For You
    * even when they're not in the current season/airing list. */
   starredItems: Record<string, StarredEntry>
+  /** User-chosen order of the watch/read sources, by source name, per media.
+   * Empty = use the natural (built-in) order. */
+  sourceOrder: Record<Media, string[]>
 
   completeOnboarding: (genres: string[]) => void
   setGenres: (genres: string[]) => void
@@ -26,6 +29,7 @@ interface PrefsState {
   redoQuiz: () => void
   toggleStar: (media: Media, item: Anime) => void
   clearStars: () => void
+  setSourceOrder: (media: Media, order: string[]) => void
 }
 
 export const usePrefs = create<PrefsState>()(
@@ -36,6 +40,7 @@ export const usePrefs = create<PrefsState>()(
       forYou: false,
       starred: [],
       starredItems: {},
+      sourceOrder: { anime: [], manga: [] },
 
       completeOnboarding: (genres) =>
         set({ genres, onboarded: true, forYou: genres.length > 0 }),
@@ -57,6 +62,8 @@ export const usePrefs = create<PrefsState>()(
           }
         }),
       clearStars: () => set({ starred: [], starredItems: {} }),
+      setSourceOrder: (media, order) =>
+        set((s) => ({ sourceOrder: { ...s.sourceOrder, [media]: order } })),
     }),
     { name: 'lazymal-prefs' },
   ),

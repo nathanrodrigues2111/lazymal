@@ -22,6 +22,7 @@ import {
   FMHY_VIDEO,
   READ_SOURCES,
   WATCH_SOURCES,
+  orderSources,
 } from '@/lib/watch'
 import type { Anime } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
@@ -94,7 +95,11 @@ export function DetailSheet() {
     (shown.publishing !== undefined ||
       shown.chapters !== undefined ||
       shown.volumes !== undefined)
-  const sources = isManga ? READ_SOURCES : WATCH_SOURCES
+  const sourceOrder = usePrefs((s) => s.sourceOrder)
+  const sources = orderSources(
+    isManga ? READ_SOURCES : WATCH_SOURCES,
+    isManga ? sourceOrder.manga : sourceOrder.anime,
+  )
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && select(null)}>
