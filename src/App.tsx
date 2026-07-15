@@ -146,9 +146,22 @@ export default function App() {
                       <p className="font-display text-lg font-extrabold text-foreground">
                         {isManga ? 'Manga' : 'Anime'}
                       </p>
-                      <p className="text-xs font-medium text-brand">
-                        {headerSubtitle}
-                      </p>
+                      <div className="text-xs font-medium text-brand">
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.p
+                            key={headerSubtitle}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{
+                              duration: 0.22,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                          >
+                            {headerSubtitle}
+                          </motion.p>
+                        </AnimatePresence>
+                      </div>
                     </motion.div>
                   </AnimatePresence>
                 </div>
