@@ -89,9 +89,9 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
         return
       }
 
-      // --- Quick downward flick (top 30%) → search -------------------------
+      // --- Quick downward flick (top 35%) → search -------------------------
       if (
-        first.y < window.innerHeight * 0.3 &&
+        first.y < window.innerHeight * 0.35 &&
         dy > 110 &&
         Math.abs(dx) < dy * 0.6 &&
         dur < 400
