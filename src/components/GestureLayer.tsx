@@ -1,6 +1,10 @@
 import { usePrefs } from '@/store/usePrefs'
 import { useStore } from '@/store/useStore'
+import { SORT_LABELS } from '@/lib/filter'
+import type { SortKey } from '@/lib/types'
 import { cn } from '@/lib/utils'
+
+const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[]
 
 /**
  * Mobile bottom bar (a soft gradient scrim, off while a sheet is open) split
@@ -16,6 +20,8 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const toggleForYou = usePrefs((s) => s.toggleForYou)
   const canForYou = usePrefs((s) => s.genres.length > 0 || s.starred.length > 0)
   const clearGenres = useStore((s) => s.clearGenres)
+  const sort = useStore((s) => s.sort)
+  const setSort = useStore((s) => s.setSort)
   const showToast = useStore((s) => s.showToast)
 
   const cycleForYou = () => {
@@ -38,8 +44,13 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   }
 
   const openSort = () => {
-    // Reuse the real sort button so the actual dropdown opens — no toast to
-    // squint at.
+    // If the sort menu is already open, advance the selection through the list
+    // (menu stays open so you watch the highlight move). Otherwise, open it.
+    if (document.querySelector('[data-sort-menu]')) {
+      const i = SORT_KEYS.indexOf(sort)
+      setSort(SORT_KEYS[(i + 1) % SORT_KEYS.length])
+      return
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' })
     const btn = document.querySelector(
       '[data-tour="sort"] button',
