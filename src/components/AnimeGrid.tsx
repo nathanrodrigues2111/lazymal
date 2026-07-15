@@ -106,23 +106,33 @@ export function AnimeGrid() {
   const [limit, setLimit] = useState(PAGE)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  // Reset the window whenever the underlying list changes (filter, tab, search).
+  // Reset the reveal window only when the actual list criteria change (media,
+  // sort, filters, tab, search) — NOT on array-identity churn, which would keep
+  // snapping the window back to page one and make "load more" appear broken.
+  const resetKey = `${media}|${sort}|${forYou}|${searchMode}|${genreIds.join(',')}|${q}`
   useEffect(() => {
     setLimit(PAGE)
-  }, [items])
+  }, [resetKey])
 
+  // Reveal the next batch as the sentinel nears the viewport. Re-arm on every
+  // `limit` change: an IntersectionObserver only fires on a *crossing*, so if
+  // the sentinel is still in range after a batch renders it would never fire
+  // again (very common on wide tablet grids). Re-observing re-checks the
+  // intersection and keeps filling until the sentinel is pushed out of range or
+  // the list is exhausted.
   useEffect(() => {
+    if (limit >= items.length) return
     const el = sentinelRef.current
     if (!el) return
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) setLimit((l) => l + PAGE)
       },
-      { rootMargin: '800px' },
+      { rootMargin: '600px' },
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [items])
+  }, [items, limit])
 
   if (status === 'loading') return <GridSkeleton />
 
@@ -133,7 +143,7 @@ export function AnimeGrid() {
         body="MyAnimeList is being a little sleepy right now~ give it a sec and poke it again!"
         action={
           <Button onClick={() => load()} className="rounded-full">
-            try again
+            Try again
           </Button>
         }
       />

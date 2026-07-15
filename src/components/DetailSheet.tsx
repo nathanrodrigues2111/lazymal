@@ -312,10 +312,10 @@ export function DetailSheet() {
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
                       key={editingSources ? 'check' : 'pencil'}
-                      initial={{ opacity: 0, scale: 0.4, rotate: -45 }}
+                      initial={{ opacity: 0, scale: 0.5, rotate: -40 }}
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.4, rotate: 45 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      exit={{ opacity: 0, scale: 0.5, rotate: 40 }}
+                      transition={{ type: 'spring', stiffness: 900, damping: 32, mass: 0.5 }}
                       className="grid place-items-center"
                     >
                       {editingSources ? (
@@ -406,7 +406,7 @@ export function DetailSheet() {
                 </div>
               ) : (
                 <p className="rounded-xl border border-line bg-panel-2 px-4 py-3 text-center text-xs text-muted-foreground">
-                  all sources hidden — tap reorder to bring some back
+                  All sources hidden — tap the pencil to bring them back.
                 </p>
               )}
 
