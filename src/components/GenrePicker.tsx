@@ -1,4 +1,4 @@
-import { m } from 'motion/react'
+import { motion } from 'motion/react'
 
 import { QUIZ_GENRES } from '@/lib/genres'
 import { cn } from '@/lib/utils'
@@ -15,7 +15,7 @@ export function GenrePicker({ selected, onToggle }: Props) {
       {QUIZ_GENRES.map((g) => {
         const active = selected.includes(g.name)
         return (
-          <m.button
+          <motion.button
             key={g.name}
             type="button"
             whileTap={{ scale: 0.95 }}
@@ -29,7 +29,7 @@ export function GenrePicker({ selected, onToggle }: Props) {
           >
             <span className="shrink-0 text-lg leading-none">{g.emoji}</span>
             <span className="flex-1 whitespace-nowrap text-left">{g.name}</span>
-          </m.button>
+          </motion.button>
         )
       })}
     </div>

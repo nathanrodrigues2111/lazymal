@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, m, Reorder, useDragControls } from 'motion/react'
+import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react'
 import {
   CalendarClock,
   Check,
@@ -91,7 +91,7 @@ function SourceRow({
       <div className="grid size-5 shrink-0 place-items-center">
         <AnimatePresence mode="wait" initial={false}>
           {editing ? (
-            <m.button
+            <motion.button
               type="button"
               key="grip"
               onPointerDown={(e) => controls.start(e)}
@@ -104,9 +104,9 @@ function SourceRow({
               className="grid size-5 cursor-grab touch-none place-items-center text-muted-foreground active:cursor-grabbing"
             >
               <GripVertical className="size-4" />
-            </m.button>
+            </motion.button>
           ) : (
-            <m.span
+            <motion.span
               key="play"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -115,7 +115,7 @@ function SourceRow({
               className="grid place-items-center"
             >
               <Play className="size-4 fill-brand text-brand" />
-            </m.span>
+            </motion.span>
           )}
         </AnimatePresence>
       </div>
@@ -126,7 +126,7 @@ function SourceRow({
       <div className="grid size-5 shrink-0 place-items-center">
         <AnimatePresence mode="wait" initial={false}>
           {editing ? (
-            <m.button
+            <motion.button
               type="button"
               key={isHidden ? 'off' : 'on'}
               onPointerDown={(e) => e.stopPropagation()}
@@ -146,9 +146,9 @@ function SourceRow({
               ) : (
                 <Eye className="size-4" />
               )}
-            </m.button>
+            </motion.button>
           ) : (
-            <m.span
+            <motion.span
               key="ext"
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -157,7 +157,7 @@ function SourceRow({
               className="grid place-items-center"
             >
               <ExternalLink className="size-3.5 text-muted-foreground" />
-            </m.span>
+            </motion.span>
           )}
         </AnimatePresence>
       </div>
@@ -438,7 +438,7 @@ export function DetailSheet() {
                   )}
                 >
                   <AnimatePresence mode="wait" initial={false}>
-                    <m.span
+                    <motion.span
                       key={editingSources ? 'check' : 'pencil'}
                       initial={{ opacity: 0, scale: 0.6, rotate: -30 }}
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -451,7 +451,7 @@ export function DetailSheet() {
                       ) : (
                         <Pencil className="size-4" />
                       )}
-                    </m.span>
+                    </motion.span>
                   </AnimatePresence>
                 </button>
               </div>
@@ -526,7 +526,7 @@ function Stat({
   loading?: boolean
 }) {
   return (
-    <m.div
+    <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-xl border border-line bg-panel-2 p-2.5 text-center"
@@ -542,6 +542,6 @@ function Stat({
           {value}
         </div>
       )}
-    </m.div>
+    </motion.div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AnimatePresence, m } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { ArrowUpDown, Check, RefreshCw, Search } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
@@ -73,7 +73,7 @@ export function Toolbar() {
                 onTouchMove={() => setOpen(false)}
                 onWheel={() => setOpen(false)}
               />
-              <m.div
+              <motion.div
                 data-sort-menu
                 initial={{ opacity: 0, y: -6, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -99,7 +99,7 @@ export function Toolbar() {
                     {sort === key && <Check className="size-4" />}
                   </button>
                 ))}
-              </m.div>
+              </motion.div>
             </>
           )}
         </AnimatePresence>

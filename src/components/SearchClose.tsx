@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, m } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
@@ -57,7 +57,7 @@ export function SearchClose() {
   return (
     <AnimatePresence>
       {visible && (
-        <m.button
+        <motion.button
           type="button"
           onClick={close}
           aria-label="Clear search"
@@ -69,7 +69,7 @@ export function SearchClose() {
           className="fixed left-1/2 z-50 grid size-14 place-items-center rounded-full bg-brand text-white shadow-2xl shadow-brand/40 transition-colors active:brightness-95 [@media(pointer:fine)]:hidden"
         >
           <X className="size-6" />
-        </m.button>
+        </motion.button>
       )}
     </AnimatePresence>
   )

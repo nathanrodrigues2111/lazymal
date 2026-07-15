@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { m } from 'motion/react'
+import { motion } from 'motion/react'
 
 import { useStore } from '@/store/useStore'
 import type { Media } from '@/lib/types'
@@ -36,7 +36,7 @@ function MediaToggleBase() {
             )}
           >
             {active && (
-              <m.span
+              <motion.span
                 layoutId="media-pill"
                 className="absolute inset-0 rounded-full bg-brand"
                 transition={{ type: 'spring', stiffness: 400, damping: 32 }}

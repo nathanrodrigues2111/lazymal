@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import {
   AnimatePresence,
-  m,
+  motion,
   useMotionValue,
   useMotionValueEvent,
   useScroll,
@@ -123,12 +123,12 @@ export default function App() {
                   aria-label="Open settings"
                   className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand/10 text-2xl transition-transform active:scale-90"
                 >
-                  <m.span
+                  <motion.span
                     style={{ rotate: isManga ? 0 : spin }}
                     className="grid place-items-center"
                   >
                     <AnimatePresence mode="wait" initial={false}>
-                      <m.span
+                      <motion.span
                         key={isManga ? 'manga' : 'anime'}
                         initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -136,13 +136,13 @@ export default function App() {
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       >
                         {isManga ? '📖' : '🌸'}
-                      </m.span>
+                      </motion.span>
                     </AnimatePresence>
-                  </m.span>
+                  </motion.span>
                 </button>
                 <div className="leading-tight">
                   <AnimatePresence mode="wait" initial={false}>
-                    <m.div
+                    <motion.div
                       key={isManga ? 'manga' : 'anime'}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -154,7 +154,7 @@ export default function App() {
                       </p>
                       <div className="text-xs font-medium text-brand">
                         <AnimatePresence mode="wait" initial={false}>
-                          <m.p
+                          <motion.p
                             key={headerSubtitle}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -165,10 +165,10 @@ export default function App() {
                             }}
                           >
                             {headerSubtitle}
-                          </m.p>
+                          </motion.p>
                         </AnimatePresence>
                       </div>
-                    </m.div>
+                    </motion.div>
                   </AnimatePresence>
                 </div>
               </div>
