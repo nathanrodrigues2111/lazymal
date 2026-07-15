@@ -27,7 +27,12 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     toggleForYou()
   }
 
+  const sortBtn = () =>
+    document.querySelector('[data-tour="sort"] button') as HTMLButtonElement | null
+
   const openSearch = () => {
+    // Close the sort menu if it's open — search and sort aren't both active.
+    if (document.querySelector('[data-sort-menu]')) sortBtn()?.click()
     const el = document.getElementById('app-search') as HTMLInputElement | null
     window.scrollTo({ top: 0, behavior: 'smooth' })
     el?.focus()
@@ -41,10 +46,12 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       setSort(SORT_KEYS[(i + 1) % SORT_KEYS.length])
       return
     }
-    const btn = document.querySelector(
-      '[data-tour="sort"] button',
-    ) as HTMLButtonElement | null
-    btn?.click()
+    // Opening the menu — dismiss any active search first.
+    const search = document.getElementById(
+      'app-search',
+    ) as HTMLInputElement | null
+    if (search && document.activeElement === search) search.blur()
+    sortBtn()?.click()
   }
 
   const zone = 'touch-pan-y'
