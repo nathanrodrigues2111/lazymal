@@ -263,6 +263,17 @@ export function DetailSheet() {
                     {shown.title_english || shown.title}
                   </DrawerTitle>
                   <button
+                    onClick={copyTitle}
+                    aria-label="Copy title"
+                    className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:text-foreground active:scale-90"
+                  >
+                    {copied ? (
+                      <Check className="size-4 text-brand" />
+                    ) : (
+                      <Copy className="size-4" />
+                    )}
+                  </button>
+                  <button
                     onClick={() => shown && toggleStar(media, shown)}
                     aria-label={
                       starred ? 'Remove from favorites' : 'Add to favorites'
@@ -277,17 +288,6 @@ export function DetailSheet() {
                           : 'text-muted-foreground',
                       )}
                     />
-                  </button>
-                  <button
-                    onClick={copyTitle}
-                    aria-label="Copy title"
-                    className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border border-line bg-panel-2 text-muted-foreground transition-colors hover:text-foreground active:scale-90"
-                  >
-                    {copied ? (
-                      <Check className="size-4 text-brand" />
-                    ) : (
-                      <Copy className="size-4" />
-                    )}
                   </button>
                 </div>
                 {(() => {

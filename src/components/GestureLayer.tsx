@@ -5,9 +5,8 @@ import { useStore } from '@/store/useStore'
 
 /**
  * One-finger gesture shortcuts (touch only, off while a sheet is open):
- *   • Diagonal from the right side down to bottom-left → For You.
- *   • Diagonal from the left side down to bottom-right → All.
- *   • Quick flick downward in the top 30% → focus the search bar.
+ *   • Diagonal swipe down-left → For You (up-right, the reverse → All).
+ *   • Quick flick downward in the top 35% → focus the search bar.
  * All gated on direction/speed/start-region so they aren't confused with
  * scrolling or the horizontal media swipe.
  */
@@ -73,18 +72,20 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       const dur = last.t - first.t
       const ratio = Math.abs(dx) / Math.max(1, Math.abs(dy))
 
-      // Diagonal band: clearly slanted (not a vertical scroll, not the more
-      // horizontal media swipe which needs ratio > 1.6). Direction decides which.
-      const diagonal = dy > 80 && ratio > 0.5 && ratio < 1.5
+      // Diagonal along the "/" axis — balanced slant (not a vertical scroll,
+      // not the more horizontal media swipe which needs ratio > 1.6). Swipe
+      // down-left → For You; the reverse, up-right → All.
+      const slant =
+        ratio > 0.5 &&
+        ratio < 1.5 &&
+        Math.abs(dx) > 70 &&
+        Math.abs(dy) > 70
 
-      // Down-left → For You.
-      if (diagonal && dx < 0) {
+      if (slant && dx < 0 && dy > 0) {
         openForYou()
         return
       }
-
-      // Down-right → All.
-      if (diagonal && dx > 0) {
+      if (slant && dx > 0 && dy < 0) {
         openAll()
         return
       }
