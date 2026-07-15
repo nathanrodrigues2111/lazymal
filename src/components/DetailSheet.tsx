@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion, Reorder } from 'motion/react'
+import { AnimatePresence, motion, Reorder } from 'motion/react'
 import {
   CalendarClock,
   Check,
@@ -309,11 +309,22 @@ export function DetailSheet() {
                       : 'border-line text-muted-foreground hover:text-foreground',
                   )}
                 >
-                  {editingSources ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <Pencil className="size-4" />
-                  )}
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={editingSources ? 'check' : 'pencil'}
+                      initial={{ opacity: 0, scale: 0.4, rotate: -45 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.4, rotate: 45 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="grid place-items-center"
+                    >
+                      {editingSources ? (
+                        <Check className="size-4" />
+                      ) : (
+                        <Pencil className="size-4" />
+                      )}
+                    </motion.span>
+                  </AnimatePresence>
                 </button>
               </div>
               {editingSources ? (
@@ -349,11 +360,26 @@ export function DetailSheet() {
                           }
                           className="-m-1 grid shrink-0 place-items-center rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground"
                         >
-                          {isHidden ? (
-                            <EyeOff className="size-4" />
-                          ) : (
-                            <Eye className="size-4" />
-                          )}
+                          <AnimatePresence mode="wait" initial={false}>
+                            <motion.span
+                              key={isHidden ? 'off' : 'on'}
+                              initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
+                              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                              exit={{ opacity: 0, scale: 0.5, rotate: 30 }}
+                              transition={{
+                                type: 'spring',
+                                stiffness: 500,
+                                damping: 30,
+                              }}
+                              className="grid place-items-center"
+                            >
+                              {isHidden ? (
+                                <EyeOff className="size-4" />
+                              ) : (
+                                <Eye className="size-4" />
+                              )}
+                            </motion.span>
+                          </AnimatePresence>
                         </button>
                       </Reorder.Item>
                     )
@@ -385,7 +411,7 @@ export function DetailSheet() {
               )}
 
               {/* Fallback directory + link out, on one tidy row */}
-              <div className="mt-5 flex items-center justify-center gap-3 border-t border-line/60 pt-4 text-xs text-muted-foreground">
+              <div className="mt-7 flex items-center justify-center gap-3 border-t border-line/60 pt-5 text-xs text-muted-foreground">
                 <a
                   href={isManga ? FMHY_READING : FMHY_VIDEO}
                   target="_blank"
