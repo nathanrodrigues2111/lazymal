@@ -51,7 +51,6 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
       setSort(SORT_KEYS[(i + 1) % SORT_KEYS.length])
       return
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     const btn = document.querySelector(
       '[data-tour="sort"] button',
     ) as HTMLButtonElement | null

@@ -70,6 +70,8 @@ export function Toolbar() {
               <div
                 className="fixed inset-0 z-20"
                 onClick={() => setOpen(false)}
+                onTouchMove={() => setOpen(false)}
+                onWheel={() => setOpen(false)}
               />
               <motion.div
                 data-sort-menu
