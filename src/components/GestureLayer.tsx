@@ -18,23 +18,13 @@ const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[]
 export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
-  const canForYou = usePrefs((s) => s.genres.length > 0 || s.starred.length > 0)
   const clearGenres = useStore((s) => s.clearGenres)
   const sort = useStore((s) => s.sort)
   const setSort = useStore((s) => s.setSort)
-  const showToast = useStore((s) => s.showToast)
 
   const cycleForYou = () => {
-    if (forYou) {
-      clearGenres()
-      toggleForYou()
-      showToast('All')
-    } else if (!canForYou) {
-      showToast('Star a title to unlock For You')
-    } else {
-      toggleForYou()
-      showToast('For You ✨')
-    }
+    if (forYou) clearGenres() // going For You -> All
+    toggleForYou()
   }
 
   const openSearch = () => {
