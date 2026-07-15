@@ -25,17 +25,17 @@ const STEPS: Step[] = [
   },
   {
     title: 'Search',
-    body: 'Tap here to find any title across all genres. On mobile you can also give a quick flick downward near the very top of the screen to jump straight to search.',
+    body: 'Tap here to find any title across all genres. On mobile you can also tap the bottom-center of the screen to jump straight to search.',
     selector: '#app-search',
   },
   {
     title: 'Sort',
-    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest.',
+    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. On mobile, tap the bottom-right of the screen to cycle through these.',
     selector: '[data-tour="sort"]',
   },
   {
     title: 'Genres, For You & All',
-    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “All” resets. Shortcut: double-tap the bottom of the screen to cycle between For You and All.',
+    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “All” resets. Shortcut: tap the bottom-left of the screen to cycle between For You and All.',
     selector: '[data-tour="genres"]',
   },
   {

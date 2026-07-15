@@ -1,31 +1,40 @@
-import { Search, Sparkles, SlidersHorizontal } from 'lucide-react'
-
 import { usePrefs } from '@/store/usePrefs'
 import { useStore } from '@/store/useStore'
+import { SORT_LABELS } from '@/lib/filter'
+import type { SortKey } from '@/lib/types'
 import { cn } from '@/lib/utils'
+
+const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[]
 
 /**
  * Mobile bottom bar (a soft gradient scrim, off while a sheet is open) split
- * into three tap zones:
- *   • Left   → For You
+ * into three invisible tap zones:
+ *   • Left   → cycle For You ↔ All
  *   • Center → Search
- *   • Right  → Filter (jump to the genre chips)
- * It captures taps so cards underneath aren't hit, but `touch-action: pan-y`
+ *   • Right  → cycle the sort (airing soon, top rated, …)
+ * Zones capture taps so cards underneath aren't hit; `touch-action: pan-y`
  * still lets you scroll through it.
  */
 export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
   const canForYou = usePrefs((s) => s.genres.length > 0 || s.starred.length > 0)
+  const clearGenres = useStore((s) => s.clearGenres)
+  const sort = useStore((s) => s.sort)
+  const setSort = useStore((s) => s.setSort)
   const showToast = useStore((s) => s.showToast)
 
-  const openForYou = () => {
-    if (!canForYou) {
+  const cycleForYou = () => {
+    if (forYou) {
+      clearGenres()
+      toggleForYou()
+      showToast('All')
+    } else if (!canForYou) {
       showToast('Star a title to unlock For You')
-      return
+    } else {
+      toggleForYou()
+      showToast('For You ✨')
     }
-    if (!forYou) toggleForYou()
-    showToast('For You ✨')
   }
 
   const openSearch = () => {
@@ -34,14 +43,14 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     el?.focus()
   }
 
-  const openFilter = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    showToast('Filter')
+  const cycleSort = () => {
+    const i = SORT_KEYS.indexOf(sort)
+    const next = SORT_KEYS[(i + 1) % SORT_KEYS.length]
+    setSort(next)
+    showToast(SORT_LABELS[next])
   }
 
-  const zone =
-    'flex touch-pan-y flex-col items-center justify-end gap-0.5 pb-[calc(env(safe-area-inset-bottom)+0.35rem)] text-muted-foreground/80 transition-colors active:text-foreground'
-  const label = 'text-[10px] font-semibold'
+  const zone = 'touch-pan-y'
 
   return (
     <div
@@ -50,18 +59,24 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
         disabled ? 'pointer-events-none opacity-0' : 'opacity-100',
       )}
     >
-      <button type="button" onClick={openForYou} aria-label="For You" className={zone}>
-        <Sparkles className="size-4" />
-        <span className={label}>For You</span>
-      </button>
-      <button type="button" onClick={openSearch} aria-label="Search" className={zone}>
-        <Search className="size-4" />
-        <span className={label}>Search</span>
-      </button>
-      <button type="button" onClick={openFilter} aria-label="Filter" className={zone}>
-        <SlidersHorizontal className="size-4" />
-        <span className={label}>Filter</span>
-      </button>
+      <button
+        type="button"
+        aria-label="Cycle For You and All"
+        onClick={cycleForYou}
+        className={zone}
+      />
+      <button
+        type="button"
+        aria-label="Search"
+        onClick={openSearch}
+        className={zone}
+      />
+      <button
+        type="button"
+        aria-label="Cycle sort order"
+        onClick={cycleSort}
+        className={zone}
+      />
     </div>
   )
 }
