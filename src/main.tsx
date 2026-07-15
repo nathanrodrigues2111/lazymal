@@ -1,7 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { LazyMotion } from 'motion/react'
 import './index.css'
 import App from './App.tsx'
+
+// Load Framer Motion's feature bundle asynchronously so it's off the initial
+// critical path: the app shell paints first, animations hydrate a beat later.
+// Components use the lightweight `m` component; `domMax` covers layout + drag.
+const loadFeatures = () => import('motion/react').then((mod) => mod.domMax)
 
 // The PWA service worker auto-updates (skipWaiting + clientsClaim). When the new
 // worker takes control, reload once so users always land on the latest build
@@ -19,6 +25,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <LazyMotion features={loadFeatures}>
+      <App />
+    </LazyMotion>
   </StrictMode>,
 )

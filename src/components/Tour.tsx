@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { ChevronLeft, X } from 'lucide-react'
 
 import { usePrefs } from '@/store/usePrefs'
@@ -81,7 +81,7 @@ export function Tour() {
   return (
     <AnimatePresence onExitComplete={completeTour}>
       {open && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -91,7 +91,7 @@ export function Tour() {
           <div className="absolute inset-0" aria-hidden />
 
           {rect ? (
-            <motion.div
+            <m.div
               aria-hidden
               initial={false}
               animate={{
@@ -122,7 +122,7 @@ export function Tour() {
                 : undefined
             }
           >
-            <motion.div
+            <m.div
               key={i}
               initial={{ opacity: 0, y: 12, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -175,9 +175,9 @@ export function Tour() {
                   {last ? 'Got it' : 'Next'}
                 </Button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )

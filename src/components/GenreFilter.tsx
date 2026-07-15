@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
@@ -69,7 +69,7 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
     <div className="flex gap-2" data-tour="genres">
       {/* Pinned: only For You stays put — pinning All too ate up the row. */}
       {showForYou && (
-        <motion.div
+        <m.div
           key={`${media}-pinned`}
           variants={CONTAINER}
           initial="hidden"
@@ -80,12 +80,12 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
             <Sparkles className="size-3" />
             For You
           </Chip>
-        </motion.div>
+        </m.div>
       )}
 
       {/* Scrollable: All + genres. */}
       <div className="relative min-w-0 flex-1">
-        <motion.div
+        <m.div
           ref={scrollRef}
           // Re-key on media so the stagger replays when switching Anime/Manga.
           key={media}
@@ -113,7 +113,7 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
               {g.name}
             </Chip>
           ))}
-        </motion.div>
+        </m.div>
 
         {/* Left edge fade once scrolled, matching the arrow's fade. */}
         {scrolled && (
@@ -158,7 +158,7 @@ function Chip({
   children: React.ReactNode
 }) {
   return (
-    <motion.button
+    <m.button
       variants={CHIP}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
@@ -170,6 +170,6 @@ function Chip({
       )}
     >
       {children}
-    </motion.button>
+    </m.button>
   )
 }

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { Check } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
@@ -9,7 +9,7 @@ export function Toast() {
   return (
     <AnimatePresence>
       {toast && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 24, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 24, scale: 0.95 }}
@@ -20,7 +20,7 @@ export function Toast() {
             <Check className="size-4 text-brand" />
             {toast}
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )

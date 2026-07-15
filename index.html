@@ -14,6 +14,9 @@
     <title>lazymal · seasonal anime</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Warm up the poster CDN + data API so the first images/data arrive sooner. -->
+    <link rel="preconnect" href="https://cdn.myanimelist.net" crossorigin />
+    <link rel="preconnect" href="https://lazymal-api.lazyneilmedia.workers.dev" crossorigin />
     <!-- Load fonts without blocking render: fetch as a non-applied stylesheet,
          then flip it to `all` once loaded. `display=swap` shows fallback text
          meanwhile, so there's no invisible-text delay and no layout jump. -->

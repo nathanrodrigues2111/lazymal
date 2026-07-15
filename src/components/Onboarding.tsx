@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { Sparkles } from 'lucide-react'
 
 import { usePrefs } from '@/store/usePrefs'
@@ -20,13 +20,13 @@ export function Onboarding() {
   return (
     <AnimatePresence>
       {!onboarded && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-end justify-center bg-ink/90 backdrop-blur-md sm:items-center"
         >
-          <motion.div
+          <m.div
             initial={{ y: 40, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 240, damping: 24 }}
@@ -63,8 +63,8 @@ export function Onboarding() {
                 Show my picks{picks.length > 0 ? ` (${picks.length})` : ''}
               </Button>
             </div>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   )
