@@ -347,7 +347,7 @@ export function DetailSheet() {
                           aria-label={
                             isHidden ? `Show ${src.name}` : `Hide ${src.name}`
                           }
-                          className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+                          className="-m-1 grid shrink-0 place-items-center rounded-lg p-1 text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {isHidden ? (
                             <EyeOff className="size-4" />
