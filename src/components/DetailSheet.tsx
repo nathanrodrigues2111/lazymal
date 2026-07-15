@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
+import { motion, Reorder } from 'motion/react'
 import {
   CalendarClock,
   Check,
   Copy,
   ExternalLink,
+  GripVertical,
+  Pencil,
   Play,
   Star,
   Users,
@@ -96,10 +98,17 @@ export function DetailSheet() {
       shown.chapters !== undefined ||
       shown.volumes !== undefined)
   const sourceOrder = usePrefs((s) => s.sourceOrder)
+  const setSourceOrder = usePrefs((s) => s.setSourceOrder)
   const sources = orderSources(
     isManga ? READ_SOURCES : WATCH_SOURCES,
     isManga ? sourceOrder.manga : sourceOrder.anime,
   )
+
+  // Reorder mode for the watch/read launcher (toggled by the pencil).
+  const [editingSources, setEditingSources] = useState(false)
+  useEffect(() => {
+    setEditingSources(false)
+  }, [shown?.mal_id, open, isManga])
 
   return (
     <Drawer open={open} onOpenChange={(o) => !o && select(null)}>
@@ -278,33 +287,85 @@ export function DetailSheet() {
                   <Play className="size-3.5 fill-brand text-brand" />
                   {isManga ? 'Read online' : 'Watch online'}
                 </h4>
-                <a
-                  href={isManga ? FMHY_READING : FMHY_VIDEO}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-[11px] text-muted-foreground underline decoration-line underline-offset-2 hover:text-foreground"
-                >
-                  more sites ↗
-                </a>
-              </div>
-              <div className="flex flex-col gap-2">
-                {sources.map((src) => (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setEditingSources((v) => !v)}
+                    aria-label={
+                      editingSources
+                        ? 'Done reordering sources'
+                        : 'Reorder sources'
+                    }
+                    className={cn(
+                      'flex items-center gap-1 text-[11px] font-medium transition-colors',
+                      editingSources
+                        ? 'text-brand'
+                        : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {editingSources ? (
+                      <>
+                        <Check className="size-3.5" />
+                        done
+                      </>
+                    ) : (
+                      <>
+                        <Pencil className="size-3" />
+                        reorder
+                      </>
+                    )}
+                  </button>
                   <a
-                    key={src.name}
-                    href={src.build({
-                      romaji: shown.title,
-                      english: shown.title_english,
-                    })}
+                    href={isManga ? FMHY_READING : FMHY_VIDEO}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="flex items-center gap-2.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/50 hover:bg-accent active:scale-[0.99]"
+                    className="text-[11px] text-muted-foreground underline decoration-line underline-offset-2 hover:text-foreground"
                   >
-                    <Play className="size-4 shrink-0 fill-brand text-brand" />
-                    <span className="flex-1">{src.name}</span>
-                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                    more sites ↗
                   </a>
-                ))}
+                </div>
               </div>
+              {editingSources ? (
+                <Reorder.Group
+                  axis="y"
+                  values={sources.map((s) => s.name)}
+                  onReorder={(next) =>
+                    setSourceOrder(isManga ? 'manga' : 'anime', next)
+                  }
+                  className="flex flex-col gap-2"
+                >
+                  {sources.map((src) => (
+                    <Reorder.Item
+                      key={src.name}
+                      value={src.name}
+                      data-vaul-no-drag
+                      whileDrag={{ scale: 1.03 }}
+                      className="flex cursor-grab touch-none select-none items-center gap-2.5 rounded-xl border border-brand/40 bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground active:cursor-grabbing"
+                    >
+                      <GripVertical className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="flex-1">{src.name}</span>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {sources.map((src) => (
+                    <a
+                      key={src.name}
+                      href={src.build({
+                        romaji: shown.title,
+                        english: shown.title_english,
+                      })}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="flex items-center gap-2.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-brand/50 hover:bg-accent active:scale-[0.99]"
+                    >
+                      <Play className="size-4 shrink-0 fill-brand text-brand" />
+                      <span className="flex-1">{src.name}</span>
+                      <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                    </a>
+                  ))}
+                </div>
+              )}
 
               {/* Link out */}
               <a
