@@ -38,7 +38,9 @@ interface PrefsState {
 export const usePrefs = create<PrefsState>()(
   persist(
     (set) => ({
-      onboarded: false,
+      // Default to onboarded so the first-run quiz never auto-pops — taste is
+      // set from Settings instead. redoQuiz() can still surface it on demand.
+      onboarded: true,
       genres: [],
       forYou: false,
       starred: [],
