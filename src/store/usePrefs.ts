@@ -22,6 +22,8 @@ interface PrefsState {
   /** User-chosen order of the watch/read sources, by source name, per media.
    * Empty = use the natural (built-in) order. */
   sourceOrder: Record<Media, string[]>
+  /** Source names the user has hidden from the launcher, per media. */
+  hiddenSources: Record<Media, string[]>
 
   completeOnboarding: (genres: string[]) => void
   setGenres: (genres: string[]) => void
@@ -30,6 +32,7 @@ interface PrefsState {
   toggleStar: (media: Media, item: Anime) => void
   clearStars: () => void
   setSourceOrder: (media: Media, order: string[]) => void
+  toggleSourceHidden: (media: Media, name: string) => void
 }
 
 export const usePrefs = create<PrefsState>()(
@@ -41,6 +44,7 @@ export const usePrefs = create<PrefsState>()(
       starred: [],
       starredItems: {},
       sourceOrder: { anime: [], manga: [] },
+      hiddenSources: { anime: [], manga: [] },
 
       completeOnboarding: (genres) =>
         set({ genres, onboarded: true, forYou: genres.length > 0 }),
@@ -64,6 +68,14 @@ export const usePrefs = create<PrefsState>()(
       clearStars: () => set({ starred: [], starredItems: {} }),
       setSourceOrder: (media, order) =>
         set((s) => ({ sourceOrder: { ...s.sourceOrder, [media]: order } })),
+      toggleSourceHidden: (media, name) =>
+        set((s) => {
+          const cur = s.hiddenSources[media]
+          const next = cur.includes(name)
+            ? cur.filter((n) => n !== name)
+            : [...cur, name]
+          return { hiddenSources: { ...s.hiddenSources, [media]: next } }
+        }),
     }),
     { name: 'lazymal-prefs' },
   ),

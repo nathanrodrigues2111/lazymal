@@ -4,6 +4,8 @@ import {
   CalendarClock,
   Check,
   Copy,
+  Eye,
+  EyeOff,
   ExternalLink,
   GripVertical,
   Pencil,
@@ -99,10 +101,15 @@ export function DetailSheet() {
       shown.volumes !== undefined)
   const sourceOrder = usePrefs((s) => s.sourceOrder)
   const setSourceOrder = usePrefs((s) => s.setSourceOrder)
+  const hiddenSources = usePrefs((s) => s.hiddenSources)
+  const toggleSourceHidden = usePrefs((s) => s.toggleSourceHidden)
+  const mediaKey = isManga ? 'manga' : 'anime'
   const sources = orderSources(
     isManga ? READ_SOURCES : WATCH_SOURCES,
-    isManga ? sourceOrder.manga : sourceOrder.anime,
+    sourceOrder[mediaKey],
   )
+  const hidden = hiddenSources[mediaKey]
+  const visibleSources = sources.filter((s) => !hidden.includes(s.name))
 
   // Reorder mode for the watch/read launcher (toggled by the pencil).
   const [editingSources, setEditingSources] = useState(false)
@@ -313,27 +320,48 @@ export function DetailSheet() {
                 <Reorder.Group
                   axis="y"
                   values={sources.map((s) => s.name)}
-                  onReorder={(next) =>
-                    setSourceOrder(isManga ? 'manga' : 'anime', next)
-                  }
+                  onReorder={(next) => setSourceOrder(mediaKey, next)}
                   className="flex flex-col gap-2"
                 >
-                  {sources.map((src) => (
-                    <Reorder.Item
-                      key={src.name}
-                      value={src.name}
-                      data-vaul-no-drag
-                      whileDrag={{ scale: 1.03 }}
-                      className="flex cursor-grab touch-none select-none items-center gap-2.5 rounded-xl border border-brand/40 bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground active:cursor-grabbing"
-                    >
-                      <GripVertical className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="flex-1">{src.name}</span>
-                    </Reorder.Item>
-                  ))}
+                  {sources.map((src) => {
+                    const isHidden = hidden.includes(src.name)
+                    return (
+                      <Reorder.Item
+                        key={src.name}
+                        value={src.name}
+                        data-vaul-no-drag
+                        whileDrag={{ scale: 1.03 }}
+                        className={cn(
+                          'flex cursor-grab touch-none select-none items-center gap-2.5 rounded-xl border bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground active:cursor-grabbing',
+                          isHidden ? 'border-line opacity-45' : 'border-brand/40',
+                        )}
+                      >
+                        <GripVertical className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="flex-1">{src.name}</span>
+                        <button
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleSourceHidden(mediaKey, src.name)
+                          }}
+                          aria-label={
+                            isHidden ? `Show ${src.name}` : `Hide ${src.name}`
+                          }
+                          className="grid size-7 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {isHidden ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
+                        </button>
+                      </Reorder.Item>
+                    )
+                  })}
                 </Reorder.Group>
-              ) : (
+              ) : visibleSources.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {sources.map((src) => (
+                  {visibleSources.map((src) => (
                     <a
                       key={src.name}
                       href={src.build({
@@ -350,6 +378,10 @@ export function DetailSheet() {
                     </a>
                   ))}
                 </div>
+              ) : (
+                <p className="rounded-xl border border-line bg-panel-2 px-4 py-3 text-center text-xs text-muted-foreground">
+                  all sources hidden — tap reorder to bring some back~
+                </p>
               )}
 
               {/* Fallback directory + link out, on one tidy row */}
