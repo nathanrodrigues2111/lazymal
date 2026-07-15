@@ -1,5 +1,4 @@
 import { memo } from 'react'
-import { motion } from 'motion/react'
 import { BookOpen, Sparkles, Star, Tv } from 'lucide-react'
 
 import type { Anime } from '@/lib/types'
@@ -28,19 +27,15 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
   const count = anime.episodes ?? anime.chapters
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={() => onSelect(anime)}
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.4,
-        delay: Math.min(index * 0.025, 0.4),
-        ease: [0.22, 1, 0.36, 1],
+      style={{
+        animationDelay: `${Math.min(index * 0.025, 0.4)}s`,
+        containIntrinsicSize: 'auto 360px',
       }}
-      whileTap={{ scale: 0.97 }}
       className={cn(
-        'group relative aspect-[2/3] w-full overflow-hidden rounded-2xl border bg-panel-2 text-left shadow-lg shadow-black/30',
+        'animate-rise group relative aspect-[2/3] w-full overflow-hidden rounded-2xl border bg-panel-2 text-left shadow-lg shadow-black/30 [content-visibility:auto] transition-transform active:scale-[0.97]',
         matched ? 'border-brand/70 ring-2 ring-brand/40' : 'border-line',
       )}
     >
@@ -115,7 +110,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
           ))}
         </div>
       </div>
-    </motion.button>
+    </button>
   )
 }
 
