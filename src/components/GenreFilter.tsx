@@ -39,11 +39,14 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
   // 'none' = fits (no arrow); 'right' = more to scroll; 'left' = at the end,
   // so the arrow flips to send you back to the start.
   const [arrow, setArrow] = useState<'none' | 'right' | 'left'>('none')
+  // Whether the row is scrolled off its start — drives the left edge fade.
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     const update = () => {
+      setScrolled(el.scrollLeft > 4)
       const scrollable = el.scrollWidth > el.clientWidth + 4
       if (!scrollable) return setArrow('none')
       const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
@@ -60,35 +63,27 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
 
   if (genres.length === 0) return null
 
+  const showForYou = favorites.length > 0 || hasStarred
+
   return (
     <div className="flex gap-2">
-      {/* Pinned: For You + All never scroll away. */}
-      <motion.div
-        key={`${media}-pinned`}
-        variants={CONTAINER}
-        initial="hidden"
-        animate="show"
-        className="flex shrink-0 gap-2"
-      >
-        {(favorites.length > 0 || hasStarred) && (
+      {/* Pinned: only For You stays put — pinning All too ate up the row. */}
+      {showForYou && (
+        <motion.div
+          key={`${media}-pinned`}
+          variants={CONTAINER}
+          initial="hidden"
+          animate="show"
+          className="flex shrink-0 gap-2"
+        >
           <Chip active={forYou} onClick={toggleForYou}>
             <Sparkles className="size-3" />
             For You
           </Chip>
-        )}
-        {/* "All" clears any genre selection and For You. */}
-        <Chip
-          active={genreIds.length === 0 && !forYou}
-          onClick={() => {
-            clearGenres()
-            if (forYou) toggleForYou()
-          }}
-        >
-          All
-        </Chip>
-      </motion.div>
+        </motion.div>
+      )}
 
-      {/* Scrollable genres. */}
+      {/* Scrollable: All + genres. */}
       <div className="relative min-w-0 flex-1">
         <motion.div
           ref={scrollRef}
@@ -99,6 +94,16 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
           animate="show"
           className="no-scrollbar flex scroll-smooth gap-2 overflow-x-auto pb-1"
         >
+          {/* "All" clears any genre selection and For You. */}
+          <Chip
+            active={genreIds.length === 0 && !forYou}
+            onClick={() => {
+              clearGenres()
+              if (forYou) toggleForYou()
+            }}
+          >
+            All
+          </Chip>
           {genres.map((g) => (
             <Chip
               key={g.mal_id}
@@ -109,6 +114,11 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
             </Chip>
           ))}
         </motion.div>
+
+        {/* Left edge fade once scrolled, matching the arrow's fade. */}
+        {scrolled && (
+          <div className="pointer-events-none absolute bottom-0 left-0 top-0 w-8 bg-gradient-to-r from-ink to-transparent" />
+        )}
 
         {/* Desktop-only (fine pointer) scroll affordance — touch devices swipe.
             Flips to a back arrow once you reach the end. */}
