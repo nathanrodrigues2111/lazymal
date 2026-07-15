@@ -613,6 +613,21 @@ export async function scrapeDetail(
         it.season = pm[1].toLowerCase()
         it.year = parseInt(pm[2], 10)
       }
+
+      // Broadcast schedule, e.g. "Broadcast:</span> Saturdays at 23:30 (JST)".
+      // Powers the "Next episode" countdown in the detail sheet.
+      const bstr = field('Broadcast')
+      if (bstr && !/unknown|not\s+scheduled|n\/?a/i.test(bstr)) {
+        const bm = bstr.match(/([A-Za-z]+days?)\s+at\s+(\d{1,2}:\d{2})/i)
+        if (bm) {
+          it.broadcast = {
+            day: bm[1],
+            time: bm[2],
+            timezone: /\(([^)]+)\)/.exec(bstr)?.[1] || 'JST',
+            string: decode(bstr.trim()),
+          }
+        }
+      }
     }
   } catch {
     // Return whatever we managed to fill in.

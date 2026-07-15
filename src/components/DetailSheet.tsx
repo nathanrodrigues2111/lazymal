@@ -220,9 +220,10 @@ export function DetailSheet() {
               <Stat icon={<Users className="size-3.5" />} label="Members" value={compact(extra?.members ?? shown.members)} loading={loadingExtra && (extra?.members ?? shown.members) == null} />
             </div>
 
-            {/* Next episode */}
+            {/* Next episode — broadcast lives on the enriched details, so
+                prefer `extra` and fall back to the list item. */}
             {(() => {
-              const air = nextAiring(shown)
+              const air = nextAiring(extra ?? shown)
               if (!air) return null
               return (
                 <div className="mt-3 flex items-center gap-3 rounded-xl border border-brand/30 bg-brand/10 px-3.5 py-2.5">
@@ -287,42 +288,26 @@ export function DetailSheet() {
                   <Play className="size-3.5 fill-brand text-brand" />
                   {isManga ? 'Read online' : 'Watch online'}
                 </h4>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setEditingSources((v) => !v)}
-                    aria-label={
-                      editingSources
-                        ? 'Done reordering sources'
-                        : 'Reorder sources'
-                    }
-                    className={cn(
-                      'flex items-center gap-1 text-[11px] font-medium transition-colors',
-                      editingSources
-                        ? 'text-brand'
-                        : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {editingSources ? (
-                      <>
-                        <Check className="size-3.5" />
-                        done
-                      </>
-                    ) : (
-                      <>
-                        <Pencil className="size-3" />
-                        reorder
-                      </>
-                    )}
-                  </button>
-                  <a
-                    href={isManga ? FMHY_READING : FMHY_VIDEO}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-[11px] text-muted-foreground underline decoration-line underline-offset-2 hover:text-foreground"
-                  >
-                    more sites ↗
-                  </a>
-                </div>
+                <button
+                  onClick={() => setEditingSources((v) => !v)}
+                  aria-label={
+                    editingSources
+                      ? 'Done reordering sources'
+                      : 'Reorder sources'
+                  }
+                  className={cn(
+                    'grid size-8 place-items-center rounded-full border transition-colors active:scale-90',
+                    editingSources
+                      ? 'border-brand/50 text-brand'
+                      : 'border-line text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {editingSources ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Pencil className="size-4" />
+                  )}
+                </button>
               </div>
               {editingSources ? (
                 <Reorder.Group
@@ -367,16 +352,26 @@ export function DetailSheet() {
                 </div>
               )}
 
-              {/* Link out */}
-              <a
-                href={shown.url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-              >
-                View on MyAnimeList
-                <ExternalLink className="size-3.5" />
-              </a>
+              {/* Fallback directory + link out, on one tidy row */}
+              <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+                <a
+                  href={isManga ? FMHY_READING : FMHY_VIDEO}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="transition-colors hover:text-foreground"
+                >
+                  More Sites ↗
+                </a>
+                <span className="text-line">·</span>
+                <a
+                  href={shown.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="transition-colors hover:text-foreground"
+                >
+                  MyAnimeList ↗
+                </a>
+              </div>
             </div>
           </div>
         )}
