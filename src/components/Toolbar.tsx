@@ -100,7 +100,7 @@ export function Toolbar() {
                         : 'text-foreground hover:bg-accent',
                     )}
                   >
-                    Dub
+                    Dubbed only
                     {dubFilter === 'dubbed' && <Check className="size-4" />}
                   </button>
                 )}
