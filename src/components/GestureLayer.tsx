@@ -28,23 +28,21 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const setDubFilter = useStore((s) => s.setDubFilter)
   const cycleSeason = useStore((s) => s.cycleSeason)
 
-  // Left zone: For You → All → Dub → For You (Dub skipped for manga).
+  // Left zone follows the pill order: For You → Dub → All → For You (Dub is
+  // skipped for manga, so it's just For You → All).
   const cycleLeft = () => {
     if (forYou) {
-      // For You → All
+      // For You → Dub (anime) / All (manga)
       toggleForYou()
-      clearGenres()
-      setDubFilter('off')
+      if (media === 'anime') setDubFilter('dubbed')
     } else if (dubFilter === 'dubbed') {
-      // Dub → For You
+      // Dub → All
       setDubFilter('off')
       clearGenres()
-      toggleForYou()
-    } else if (media === 'anime') {
-      // All → Dub
-      setDubFilter('dubbed')
     } else {
-      // Manga has no Dub, so All → For You
+      // All → For You
+      setDubFilter('off')
+      clearGenres()
       toggleForYou()
     }
   }

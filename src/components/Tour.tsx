@@ -40,7 +40,7 @@ const STEPS: Step[] = [
   },
   {
     title: 'For You, Dub, All & genres',
-    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “Dub” (anime) shows only titles with an English dub; “All” resets. Shortcut: tap the bottom-left of the screen to cycle For You → All → Dub.',
+    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “Dub” (anime) shows only titles with an English dub; “All” resets. Shortcut: tap the bottom-left of the screen to cycle For You → Dub → All.',
     selector: '[data-tour="genres"]',
   },
   {
