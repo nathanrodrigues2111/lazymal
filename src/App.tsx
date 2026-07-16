@@ -13,6 +13,7 @@ import { usePrefs } from '@/store/usePrefs'
 import {
   SEASON_ORDER,
   currentSeason,
+  seasonEmoji,
   seasonLabel,
   shiftSeason,
 } from '@/lib/season'
@@ -93,6 +94,28 @@ export default function App() {
     setSeason(shiftSeason(cur, -next))
   }
 
+  // Season icon: tap cycles the season (like the title); press-and-hold opens
+  // settings/taste. A long-press timer fires the modal; a quick release cycles.
+  const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const heldRef = useRef(false)
+  const iconPointerDown = () => {
+    heldRef.current = false
+    holdTimer.current = setTimeout(() => {
+      heldRef.current = true
+      setSettingsOpen(true)
+    }, 450)
+  }
+  const iconRelease = () => clearTimeout(holdTimer.current)
+  const iconClick = () => {
+    clearTimeout(holdTimer.current)
+    if (heldRef.current) {
+      heldRef.current = false // long-press already opened settings
+      return
+    }
+    if (canCycleSeason) cycleSeason()
+    else setSettingsOpen(true) // manga / search / For You: fall back to settings
+  }
+
   // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
   // Sakura does one smooth full spin the moment the page scroll touches the
   // top. Hysteresis (arm past 60px, fire at ≤2px) keeps it to one spin per
@@ -137,9 +160,17 @@ export default function App() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setSettingsOpen(true)}
-                  aria-label="Open settings"
-                  className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-brand/10 text-2xl transition-transform active:scale-90"
+                  onClick={iconClick}
+                  onPointerDown={iconPointerDown}
+                  onPointerUp={iconRelease}
+                  onPointerLeave={iconRelease}
+                  onContextMenu={(e) => e.preventDefault()}
+                  aria-label={
+                    canCycleSeason
+                      ? 'Change season (hold for settings)'
+                      : 'Open settings'
+                  }
+                  className="grid size-11 shrink-0 select-none touch-none place-items-center overflow-hidden rounded-2xl bg-brand/10 text-2xl transition-transform active:scale-90"
                 >
                   <motion.span
                     style={{ rotate: isManga ? 0 : spin }}
@@ -147,13 +178,13 @@ export default function App() {
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span
-                        key={isManga ? 'manga' : 'anime'}
+                        key={isManga ? 'manga' : season.season}
                         initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       >
-                        {isManga ? '📖' : '🌸'}
+                        {isManga ? '📖' : seasonEmoji(season.season)}
                       </motion.span>
                     </AnimatePresence>
                   </motion.span>
