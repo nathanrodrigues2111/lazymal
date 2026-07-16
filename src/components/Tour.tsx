@@ -29,8 +29,8 @@ const STEPS: Step[] = [
     selector: '#app-search',
   },
   {
-    title: 'Sort',
-    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. On mobile, tap the bottom-right of the screen to open this menu.',
+    title: 'Sort & dubs',
+    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. Anime also has a “Dubbed” option that shows only titles with an English dub, ranked by score. On mobile, tap the bottom-right of the screen to open this menu.',
     selector: '[data-tour="sort"]',
   },
   {

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
-import type { Anime, Media, Season, SortKey } from '../lib/types'
+import type { Anime, DubFilter, Media, Season, SortKey } from '../lib/types'
 import { fetchManga, fetchNow, fetchSeason } from '../lib/jikan'
 import { currentSeason, sameSeason } from '../lib/season'
 import { readCache, writeCache } from '../lib/cache'
+import { cachedDub, fetchDubBatch, loadDubCache } from '../lib/dub'
 
 interface StoreState {
   media: Media
@@ -15,6 +16,13 @@ interface StoreState {
   genreIds: number[]
   sort: SortKey
   query: string
+
+  /** Known English-dub availability by mal_id (anime only). */
+  dub: Record<number, boolean>
+  /** Dub filter: off, dubbed-only, or sub-only. */
+  dubFilter: DubFilter
+  /** True while dub statuses for the current list are still loading in. */
+  dubEnriching: boolean
 
   selected: Anime | null
 
@@ -31,12 +39,20 @@ interface StoreState {
   setSort: (sort: SortKey) => void
   setQuery: (query: string) => void
   select: (anime: Anime | null) => void
+  setDubFilter: (f: DubFilter) => void
+  /** Look up dub status for the loaded anime list in the background, caching as
+   * it goes. `refresh` re-checks titles not yet known to be dubbed. */
+  enrichDub: (refresh?: boolean) => Promise<void>
+  /** Ensure a single title's dub status is known (used by the detail sheet). */
+  ensureDub: (id: number) => Promise<void>
 }
 
 // Token so stale responses are dropped when the user switches seasons quickly.
 let requestId = 0
 let controller: AbortController | null = null
 let toastTimer: ReturnType<typeof setTimeout> | undefined
+// Token so a background dub sweep stops when the list/season/media changes.
+let dubToken = 0
 
 export const useStore = create<StoreState>((set, get) => ({
   media: 'anime',
@@ -48,6 +64,10 @@ export const useStore = create<StoreState>((set, get) => ({
   genreIds: [],
   sort: 'score',
   query: '',
+
+  dub: loadDubCache(),
+  dubFilter: 'off',
+  dubEnriching: false,
 
   selected: null,
 
@@ -82,12 +102,17 @@ export const useStore = create<StoreState>((set, get) => ({
       // Keep showing cached data on failure; only error if we have nothing.
       if (!cached) set({ status: 'error' })
     }
+    // Fill in dub badges/filter for the current anime list in the background.
+    if (get().media === 'anime' && get().anime.length > 0) void get().enrichDub()
   },
 
   refresh: async () => {
     await get().load()
     if (get().status === 'error') get().showToast('Couldn’t refresh. Try again?')
     else get().showToast(`All fresh — ${get().anime.length} titles`)
+    // Re-check dubs on a manual refresh so a title that gained a dub since the
+    // last look flips to dubbed.
+    if (get().media === 'anime') void get().enrichDub(true)
   },
 
   showToast: (message) => {
@@ -112,7 +137,14 @@ export const useStore = create<StoreState>((set, get) => ({
 
   setMedia: (media) => {
     if (media === get().media) return
-    set({ media, genreIds: [], query: '', sort: 'score', selected: null })
+    set({
+      media,
+      genreIds: [],
+      query: '',
+      sort: 'score',
+      dubFilter: 'off',
+      selected: null,
+    })
     void get().load()
   },
 
@@ -133,4 +165,55 @@ export const useStore = create<StoreState>((set, get) => ({
   setSort: (sort) => set({ sort }),
   setQuery: (query) => set({ query }),
   select: (selected) => set({ selected }),
+
+  setDubFilter: (f) => set({ dubFilter: f }),
+
+  enrichDub: async (refresh = false) => {
+    const my = ++dubToken
+    if (get().media !== 'anime') return
+    const known = get().dub
+    // On a refresh, re-check everything not already confirmed dubbed; otherwise
+    // only look up titles whose status we don't have (cache-backed).
+    const todo = get()
+      .anime.map((a) => a.mal_id)
+      .filter((mid) =>
+        refresh
+          ? known[mid] !== true
+          : known[mid] === undefined && cachedDub(mid) === undefined,
+      )
+    if (todo.length === 0) return
+
+    set({ dubEnriching: true })
+    // AniList checks ~12 titles per request, so a whole season is a handful of
+    // calls; a little concurrency keeps it quick without tripping rate limits.
+    const chunks: number[][] = []
+    for (let i = 0; i < todo.length; i += 12) chunks.push(todo.slice(i, i + 12))
+    let next = 0
+    const worker = async () => {
+      while (next < chunks.length && my === dubToken) {
+        const map = await fetchDubBatch(chunks[next++])
+        if (my !== dubToken) return
+        const entries = Object.entries(map)
+        if (entries.length > 0)
+          set((s) => {
+            const dub = { ...s.dub }
+            for (const [id, v] of entries) dub[+id] = v
+            return { dub }
+          })
+      }
+    }
+    await Promise.all(Array.from({ length: 3 }, worker))
+    if (my === dubToken) set({ dubEnriching: false })
+  },
+
+  ensureDub: async (id) => {
+    if (get().dub[id] !== undefined) return
+    const c = cachedDub(id)
+    if (c !== undefined) {
+      set((s) => ({ dub: { ...s.dub, [id]: c } }))
+      return
+    }
+    const map = await fetchDubBatch([id])
+    if (id in map) set((s) => ({ dub: { ...s.dub, [id]: map[id] } }))
+  },
 }))

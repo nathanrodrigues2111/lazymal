@@ -9,7 +9,7 @@
 import { buildImages, type ListResponse, type MalItem } from './shape'
 
 // Browser-like headers so MAL doesn't serve us a bot-block page.
-const HEADERS = {
+export const HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
   Accept: 'text/html',
@@ -97,6 +97,54 @@ function decode(s: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&nbsp;/g, ' ')
+}
+
+// Legal/official services MAL links on a detail page, matched by domain. Order
+// = display order. Kept to unambiguous domains so a stray footer/social link
+// can't be mistaken for an official listing. Anime = streaming; manga = readers.
+const STREAMING_SITES: { name: string; match: RegExp }[] = [
+  { name: 'Crunchyroll', match: /crunchyroll\.com/i },
+  { name: 'Netflix', match: /netflix\.com/i },
+  { name: 'HIDIVE', match: /hidive\.com/i },
+  { name: 'Hulu', match: /hulu\.com/i },
+  { name: 'Amazon Prime Video', match: /primevideo\.com/i },
+  { name: 'Disney+', match: /disneyplus\.com/i },
+  { name: 'Max', match: /(hbomax|\bmax)\.com/i },
+  { name: 'Bilibili', match: /bilibili\.(tv|com)/i },
+]
+
+const READER_SITES: { name: string; match: RegExp }[] = [
+  { name: 'Manga Plus', match: /mangaplus\.shueisha\.co\.jp/i },
+  { name: 'Viz', match: /viz\.com/i },
+  { name: 'K Manga', match: /kmanga\.kodansha\.com/i },
+  { name: 'Comikey', match: /comikey\.com/i },
+  { name: 'Azuki', match: /azuki\.co/i },
+  { name: 'INKR', match: /inkr\.com/i },
+  { name: 'BookWalker', match: /bookwalker\.jp/i },
+  { name: 'Amazon Kindle', match: /amazon\.[a-z.]+\/.*(kindle|dp\/)/i },
+]
+
+/** Pull official links out of a detail page's HTML, one per service, in the
+ * given priority order. Empty when none are listed. */
+function extractLinks(
+  html: string,
+  sites: { name: string; match: RegExp }[],
+): { name: string; url: string }[] {
+  const found = new Map<string, string>()
+  const anchorRe = /href="(https?:\/\/[^"]+)"/gi
+  let m: RegExpExecArray | null
+  while ((m = anchorRe.exec(html))) {
+    const href = m[1]
+    for (const s of sites) {
+      if (!found.has(s.name) && s.match.test(href)) {
+        found.set(s.name, href.replace(/&amp;/g, '&'))
+      }
+    }
+  }
+  // Keep priority order regardless of DOM order.
+  return sites
+    .filter((s) => found.has(s.name))
+    .map((s) => ({ name: s.name, url: found.get(s.name)! }))
 }
 
 /** Fresh MalItem with every field defaulted; handlers fill in what they find. */
@@ -629,12 +677,22 @@ export async function scrapeDetail(
         }
       }
     }
+    // Official links MAL lists on the detail page — streaming services for
+    // anime, licensed readers for manga — so we can offer real, per-title legal
+    // viewing/reading options.
+    it.streaming = extractLinks(
+      html,
+      media === 'anime' ? STREAMING_SITES : READER_SITES,
+    )
   } catch {
     // Return whatever we managed to fill in.
   }
 
   return it
 }
+
+// Note: dub detection lives in the frontend (it queries AniList directly, which
+// 403s Cloudflare Worker requests but allows browser CORS).
 
 // --- search scraper --------------------------------------------------------
 

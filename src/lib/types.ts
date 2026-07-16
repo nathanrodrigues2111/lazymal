@@ -53,6 +53,8 @@ export interface Anime {
   themes: Genre[]
   studios: Genre[]
   trailer?: { youtube_id: string | null; url: string | null }
+  /** Official/legal streaming platforms for this title (from the worker). */
+  streaming?: { name: string; url: string }[]
 }
 
 export interface JikanPagination {
@@ -65,6 +67,9 @@ export interface SeasonResponse {
   data: Anime[]
   pagination: JikanPagination
 }
+
+/** Dub filter: show everything, only confirmed-dubbed, or only sub-only. */
+export type DubFilter = 'off' | 'dubbed' | 'sub'
 
 export type SortKey =
   | 'airing'

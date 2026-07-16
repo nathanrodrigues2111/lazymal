@@ -4,7 +4,7 @@ import { readDetail, writeDetail } from './cache'
 // Our self-hosted LazyMAL API worker is primary; the public Jikan API is the
 // backup if the worker is ever unreachable. Override the primary via
 // VITE_API_BASE.
-const PRIMARY =
+export const API_BASE =
   import.meta.env.VITE_API_BASE ||
   'https://lazymal-api.lazyneilmedia.workers.dev'
 const FALLBACK = 'https://api.jikan.moe/v4'
@@ -56,7 +56,7 @@ async function get<T>(
   maxAttempts = 6,
 ): Promise<T> {
   try {
-    return await fetchBase<T>(PRIMARY, path, signal, maxAttempts)
+    return await fetchBase<T>(API_BASE, path, signal, maxAttempts)
   } catch (err) {
     if ((err as Error).name === 'AbortError') throw err
     // Worker down/unreachable — try the Jikan backup.
@@ -161,6 +161,28 @@ export async function searchTitles(
       3,
     )
     return dedupe(res.data)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Official/legal streaming links for a title, scraped from MAL's detail page by
+ * our worker. Only the worker implements this endpoint, so there's no Jikan
+ * fallback — returns an empty list when unavailable.
+ */
+export async function fetchStreaming(
+  media: 'anime' | 'manga',
+  id: number,
+  signal?: AbortSignal,
+): Promise<{ name: string; url: string }[]> {
+  try {
+    const res = await fetch(`${API_BASE}/${media}/${id}/streaming`, { signal })
+    if (!res.ok) return []
+    const body = (await res.json()) as {
+      data?: { name: string; url: string }[]
+    }
+    return body.data ?? []
   } catch {
     return []
   }

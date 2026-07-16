@@ -27,6 +27,9 @@ export function AnimeGrid() {
   const load = useStore((s) => s.load)
   const media = useStore((s) => s.media)
   const clearGenres = useStore((s) => s.clearGenres)
+  const dubFilter = useStore((s) => s.dubFilter)
+  const dub = useStore((s) => s.dub)
+  const dubEnriching = useStore((s) => s.dubEnriching)
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
@@ -51,11 +54,25 @@ export function AnimeGrid() {
 
   const genres = useMemo(() => deriveGenres(anime), [anime])
 
-  // Local list (season / airing), filtered + sorted.
+  // Local list (season / airing), filtered + sorted. `dub` only affects the
+  // result while a dub filter is on, so we gate the dependency on it —
+  // otherwise every background dub lookup would needlessly re-sort the list.
+  const dubDep = dubFilter !== 'off' ? dub : null
   const listed = useMemo(
     () =>
-      filterAndSort(anime, genreIds, sort, query, favorites, forYou, starredIds),
-    [anime, genreIds, sort, query, favorites, forYou, starredIds],
+      filterAndSort(
+        anime,
+        genreIds,
+        sort,
+        query,
+        favorites,
+        forYou,
+        starredIds,
+        dubFilter,
+        dub,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [anime, genreIds, sort, query, favorites, forYou, starredIds, dubFilter, dubDep],
   )
 
   // For You also surfaces starred titles not in the current list (e.g. ones you
@@ -110,7 +127,7 @@ export function AnimeGrid() {
   // Reset the reveal window only when the actual list criteria change (media,
   // sort, filters, tab, search) — NOT on array-identity churn, which would keep
   // snapping the window back to page one and make "load more" appear broken.
-  const resetKey = `${media}|${sort}|${forYou}|${searchMode}|${genreIds.join(',')}|${q}`
+  const resetKey = `${media}|${sort}|${forYou}|${searchMode}|${dubFilter}|${genreIds.join(',')}|${q}`
   useEffect(() => {
     setLimit(PAGE)
   }, [resetKey])
@@ -160,6 +177,13 @@ export function AnimeGrid() {
 
       <ExternalSearch query={query} media={media} />
 
+      {!searchMode && dubFilter !== 'off' && dubEnriching && (
+        <p className="text-xs font-medium text-muted-foreground">
+          {dubFilter === 'dubbed' ? 'Finding dubbed titles' : 'Finding sub-only titles'}
+          … ({items.length} so far)
+        </p>
+      )}
+
       {searchMode && (items.length > 0 || searching) && (
         <p className="text-xs font-medium text-muted-foreground">
           {searching
@@ -183,7 +207,7 @@ export function AnimeGrid() {
           </div>
           {hasMore && <div ref={sentinelRef} aria-hidden className="h-1 w-full" />}
         </>
-      ) : searching ? (
+      ) : searching || (dubFilter !== 'off' && dubEnriching) ? (
         <div className={GRID}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="aspect-[2/3] w-full rounded-2xl" />

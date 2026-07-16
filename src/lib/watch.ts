@@ -44,6 +44,74 @@ export const WATCH_SOURCES: WatchSource[] = [
   },
 ]
 
+/**
+ * Official / legal streaming services. Used as a fallback for the "Watch
+ * legally" section when MAL lists no real per-title links — each opens the
+ * service's own search for the title.
+ */
+export const LEGAL_SOURCES: WatchSource[] = [
+  {
+    name: 'Crunchyroll',
+    home: 'https://www.crunchyroll.com',
+    build: ({ english, romaji }) =>
+      `https://www.crunchyroll.com/search?q=${enc(english || romaji)}`,
+  },
+  {
+    name: 'HIDIVE',
+    home: 'https://www.hidive.com',
+    build: ({ english, romaji }) =>
+      `https://www.hidive.com/search?q=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Netflix',
+    home: 'https://www.netflix.com',
+    build: ({ english, romaji }) =>
+      `https://www.netflix.com/search?q=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Prime Video',
+    home: 'https://www.primevideo.com',
+    build: ({ english, romaji }) =>
+      `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Hulu',
+    home: 'https://www.hulu.com',
+    build: ({ english, romaji }) =>
+      `https://www.hulu.com/search?q=${enc(english || romaji)}`,
+  },
+]
+
+/**
+ * Official / legal manga readers. Fallback for the "Read online → Official"
+ * group when MAL lists no real per-title reader links.
+ */
+export const LEGAL_READ_SOURCES: WatchSource[] = [
+  {
+    name: 'Manga Plus',
+    home: 'https://mangaplus.shueisha.co.jp',
+    build: () => 'https://mangaplus.shueisha.co.jp/manga_list/all',
+  },
+  {
+    name: 'Viz',
+    home: 'https://www.viz.com',
+    build: ({ english, romaji }) =>
+      `https://www.viz.com/search?search=${enc(english || romaji)}`,
+  },
+  {
+    name: 'BookWalker',
+    home: 'https://global.bookwalker.jp',
+    build: ({ english, romaji }) =>
+      `https://global.bookwalker.jp/search/?word=${enc(english || romaji)}`,
+  },
+  {
+    name: 'Amazon Kindle',
+    home: 'https://www.amazon.com',
+    build: ({ english, romaji }) =>
+      `https://www.amazon.com/s?k=${enc(`${english || romaji} manga`)}&i=digital-text`,
+  },
+]
+
 /** Manga readers for the "Read online" launcher. */
 export const READ_SOURCES: WatchSource[] = [
   {

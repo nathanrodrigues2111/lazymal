@@ -53,12 +53,12 @@ const CORS: Record<string, string> = {
 
 const SEASONS = ['winter', 'spring', 'summer', 'fall']
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200, maxAge = 1800): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': status === 200 ? 'public, max-age=1800' : 'no-store',
+      'Cache-Control': status === 200 ? `public, max-age=${maxAge}` : 'no-store',
       ...CORS,
     },
   })
@@ -84,13 +84,19 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
     if (req.method !== 'GET') return json({ error: 'Method not allowed' }, 405)
 
-    // Edge cache.
-    const cache = caches.default
-    const cacheKey = new Request(req.url, { method: 'GET' })
-    const hit = await cache.match(cacheKey)
-    if (hit) return hit
-
     const url = new URL(req.url)
+    // `?fresh=1` forces a re-fetch that bypasses (and then refreshes) the edge
+    // cache — used to re-check dub status after a title may have gained a dub.
+    const bypass = url.searchParams.has('fresh')
+    const cache = caches.default
+    // Normalise the cache key so a forced refresh overwrites the shared entry.
+    const canonical = new URL(req.url)
+    canonical.searchParams.delete('fresh')
+    const cacheKey = new Request(canonical.toString(), { method: 'GET' })
+    if (!bypass) {
+      const hit = await cache.match(cacheKey)
+      if (hit) return hit
+    }
     const seg = url.pathname.split('/').filter(Boolean)
     const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1)
     const q = url.searchParams.get('q')?.trim()
@@ -163,6 +169,18 @@ export default {
               : await scrapeSearch(m, q, page),
           ),
         )
+      }
+      // ---- official links: /{anime|manga}/{id}/streaming ----
+      // Streaming services for anime, licensed readers for manga.
+      else if (
+        (seg[0] === 'anime' || seg[0] === 'manga') &&
+        /^\d+$/.test(seg[1] || '') &&
+        seg[2] === 'streaming'
+      ) {
+        const media = seg[0] as 'anime' | 'manga'
+        const id = parseInt(seg[1], 10)
+        const detail = await scrapeDetail(media, id)
+        resp = json({ data: detail?.streaming ?? [] }, 200, 60 * 60 * 24)
       }
       // ---- details: /anime/{id}[/full] , /manga/{id}[/full] ----
       // Official API when a key is set; otherwise scrape the MAL detail page

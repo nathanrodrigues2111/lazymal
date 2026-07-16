@@ -18,6 +18,8 @@ export function Toolbar() {
   const setSort = useStore((s) => s.setSort)
   const refresh = useStore((s) => s.refresh)
   const media = useStore((s) => s.media)
+  const dubFilter = useStore((s) => s.dubFilter)
+  const setDubFilter = useStore((s) => s.setDubFilter)
   const [open, setOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -81,24 +83,49 @@ export function Toolbar() {
                 transition={{ duration: 0.16 }}
                 className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-panel p-1.5 shadow-2xl shadow-black/50"
               >
-                {SORT_KEYS.map((key) => (
+                {/* Single-select list. "Dubbed" (anime only) is one option
+                    that shows dubbed titles by highest MAL score; picking any
+                    sort clears it. Exactly one row is ever active. */}
+                {media === 'anime' && (
                   <button
-                    key={key}
                     onClick={() => {
-                      setSort(key)
+                      setDubFilter('dubbed')
+                      setSort('score')
                       setOpen(false)
                     }}
                     className={cn(
                       'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                      sort === key
+                      dubFilter === 'dubbed'
                         ? 'bg-primary/15 text-primary'
                         : 'text-foreground hover:bg-accent',
                     )}
                   >
-                    {SORT_LABELS[key]}
-                    {sort === key && <Check className="size-4" />}
+                    Dubbed
+                    {dubFilter === 'dubbed' && <Check className="size-4" />}
                   </button>
-                ))}
+                )}
+                {SORT_KEYS.map((key) => {
+                  const active = dubFilter === 'off' && sort === key
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setSort(key)
+                        setDubFilter('off')
+                        setOpen(false)
+                      }}
+                      className={cn(
+                        'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                        active
+                          ? 'bg-primary/15 text-primary'
+                          : 'text-foreground hover:bg-accent',
+                      )}
+                    >
+                      {SORT_LABELS[key]}
+                      {active && <Check className="size-4" />}
+                    </button>
+                  )
+                })}
               </motion.div>
             </>
           )}

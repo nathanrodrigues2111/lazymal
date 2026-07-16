@@ -1,4 +1,4 @@
-import type { Anime, Genre, SortKey } from './types'
+import type { Anime, DubFilter, Genre, SortKey } from './types'
 import { matchScore } from './genres'
 import { nextAiring } from './airing'
 
@@ -34,6 +34,8 @@ export function filterAndSort(
   favorites: string[] = [],
   forYou = false,
   starredIds: Set<number> = new Set(),
+  dubFilter: DubFilter = 'off',
+  dubMap: Record<number, boolean> = {},
 ): Anime[] {
   const q = query.trim().toLowerCase()
   const filtered = anime.filter((a) => {
@@ -41,6 +43,10 @@ export function filterAndSort(
       genreIds.length === 0 ||
       genreIds.every((id) => a.genres.some((g) => g.mal_id === id))
     if (!matchGenre) return false
+    // Dub filter: keep only confirmed-dubbed ('dubbed') or confirmed-sub-only
+    // ('sub'). Titles whose status isn't known yet stay hidden until it loads.
+    if (dubFilter === 'dubbed' && dubMap[a.mal_id] !== true) return false
+    if (dubFilter === 'sub' && dubMap[a.mal_id] !== false) return false
     // For You = titles matching your taste OR ones you starred.
     if (forYou && !isMatch(a, favorites) && !starredIds.has(a.mal_id))
       return false

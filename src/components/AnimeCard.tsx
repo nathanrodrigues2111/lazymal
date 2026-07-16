@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { BookOpen, Sparkles, Star, Tv } from 'lucide-react'
+import { BookOpen, Languages, Sparkles, Star, Tv } from 'lucide-react'
 
 import type { Anime } from '@/lib/types'
 import { useStore } from '@/store/useStore'
@@ -18,6 +18,7 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
   const key = `${media}:${anime.mal_id}`
   const starred = usePrefs((s) => s.starred.includes(key))
   const toggleStar = usePrefs((s) => s.toggleStar)
+  const hasDub = useStore((s) => s.dub[anime.mal_id])
 
   // Grid cards are small (2–6 columns) — the medium image is visually identical
   // at this size and roughly half the bytes/decode cost of the large one.
@@ -95,6 +96,12 @@ function AnimeCardBase({ anime, index, matched = false, onSelect }: Props) {
           {title}
         </h3>
         <div className="flex flex-wrap items-center gap-1">
+          {!isManga && hasDub && (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white">
+              <Languages className="size-2.5" />
+              DUB
+            </span>
+          )}
           {anime.type && (
             <span className="flex items-center gap-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
               {isManga ? (

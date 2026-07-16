@@ -48,6 +48,8 @@ export interface MalItem {
   genres: Tag[]
   themes: Tag[]
   studios: Tag[]
+  // Official/legal streaming platforms MAL links on the detail page.
+  streaming?: { name: string; url: string }[]
 }
 
 export interface ListResponse {

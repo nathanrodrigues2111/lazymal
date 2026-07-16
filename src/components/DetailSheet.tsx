@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react'
 import {
+  BadgeCheck,
   CalendarClock,
   Check,
   Copy,
@@ -8,6 +9,7 @@ import {
   EyeOff,
   ExternalLink,
   GripVertical,
+  Languages,
   Pencil,
   Play,
   Star,
@@ -18,12 +20,15 @@ import {
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
-import { fetchDetails } from '@/lib/jikan'
+import { fetchDetails, fetchStreaming } from '@/lib/jikan'
+import { fetchEpisodeInfo, type EpisodeInfo } from '@/lib/dub'
 import { cn, compact } from '@/lib/utils'
 import { countdown, localAirLabel, nextAiring } from '@/lib/airing'
 import {
   FMHY_READING,
   FMHY_VIDEO,
+  LEGAL_READ_SOURCES,
+  LEGAL_SOURCES,
   READ_SOURCES,
   WATCH_SOURCES,
   orderSources,
@@ -227,6 +232,48 @@ export function DetailSheet() {
     (shown.publishing !== undefined ||
       shown.chapters !== undefined ||
       shown.volumes !== undefined)
+
+  // Dub availability (anime only) — make sure it's fetched when the sheet opens.
+  const dub = useStore((s) => (shown ? s.dub[shown.mal_id] : undefined))
+  const ensureDub = useStore((s) => s.ensureDub)
+  const [epInfo, setEpInfo] = useState<EpisodeInfo | null>(null)
+  useEffect(() => {
+    setEpInfo(null)
+    if (shown && !isManga) {
+      void ensureDub(shown.mal_id)
+      let cancelled = false
+      fetchEpisodeInfo(shown.mal_id).then((e) => {
+        if (!cancelled) setEpInfo(e)
+      })
+      return () => {
+        cancelled = true
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown?.mal_id, isManga])
+
+  // Official links for this title — streaming services (anime) or licensed
+  // readers (manga). Falls back to per-service search links when MAL lists none.
+  const [streaming, setStreaming] = useState<{ name: string; url: string }[]>([])
+  const [loadingStreaming, setLoadingStreaming] = useState(false)
+  useEffect(() => {
+    setStreaming([])
+    if (!shown) return
+    let cancelled = false
+    setLoadingStreaming(true)
+    fetchStreaming(isManga ? 'manga' : 'anime', shown.mal_id)
+      .then((s) => {
+        if (!cancelled) setStreaming(s)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingStreaming(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown?.mal_id, isManga])
+
   const sourceOrder = usePrefs((s) => s.sourceOrder)
   const setSourceOrder = usePrefs((s) => s.setSourceOrder)
   const hiddenSources = usePrefs((s) => s.hiddenSources)
@@ -348,6 +395,41 @@ export function DetailSheet() {
               </div>
             </div>
 
+            {/* Sub/Dub availability + episode progress (anime only). Worded so
+                it's clear subs always exist and a dub is the extra. */}
+            {!isManga && (
+              <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 px-2.5 py-1 font-semibold text-foreground">
+                  <Languages
+                    className={cn(
+                      'size-4',
+                      dub === true ? 'text-emerald-400' : 'text-muted-foreground',
+                    )}
+                  />
+                  {dub === true
+                    ? 'Subbed & Dubbed'
+                    : dub === false
+                      ? 'Subbed · no dub yet'
+                      : 'Subbed'}
+                </span>
+                {(() => {
+                  const total = epInfo?.total ?? shown.episodes
+                  const aired = epInfo?.airedSub
+                  let text: string | null = null
+                  if (epInfo?.releasing && aired != null)
+                    text = total
+                      ? `${aired} of ${total} eps subbed`
+                      : `${aired} eps subbed so far`
+                  else if (total) text = `${total} episodes`
+                  return text ? (
+                    <span className="rounded-lg bg-panel-2 px-2.5 py-1 text-muted-foreground">
+                      {text}
+                    </span>
+                  ) : null
+                })()}
+              </div>
+            )}
+
             {/* Stat row */}
             <div className="mt-4 grid grid-cols-3 gap-2">
               <Stat icon={<Trophy className="size-3.5" />} label="Rank" value={(extra?.rank ?? shown.rank) ? `#${extra?.rank ?? shown.rank}` : '—'} loading={loadingExtra && (extra?.rank ?? shown.rank) == null} />
@@ -416,13 +498,70 @@ export function DetailSheet() {
               )
             })()}
 
-            {/* Watch / Read online */}
+            {/* Watch / Read online — one section with an Official group (legal
+                streaming/readers) and an Others group (community sources). */}
             <div className="mt-7 border-t border-line/60 pt-5">
-              <div className="mb-3 flex items-center justify-between">
-                <h4 className="flex items-center gap-1.5 font-display text-sm font-semibold text-foreground">
-                  <Play className="size-3.5 fill-brand text-brand" />
-                  {isManga ? 'Read online' : 'Watch online'}
-                </h4>
+              <h4 className="mb-4 flex items-center gap-1.5 font-display text-sm font-semibold text-foreground">
+                <Play className="size-3.5 fill-brand text-brand" />
+                {isManga ? 'Read online' : 'Watch online'}
+              </h4>
+
+              {/* Official */}
+              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-300">
+                <BadgeCheck className="size-3.5" />
+                Official
+              </p>
+              {loadingStreaming && streaming.length === 0 ? (
+                <div className="flex flex-col gap-2">
+                  {[0, 1].map((i) => (
+                    <span
+                      key={i}
+                      className="shimmer h-[46px] rounded-xl bg-panel-2"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-2">
+                    {(streaming.length > 0
+                      ? streaming
+                      : (isManga ? LEGAL_READ_SOURCES : LEGAL_SOURCES).map(
+                          (s) => ({
+                            name: s.name,
+                            url: s.build({
+                              romaji: shown.title,
+                              english: shown.title_english,
+                            }),
+                          }),
+                        )
+                    ).map((s) => (
+                      <a
+                        key={s.name}
+                        href={s.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="flex select-none items-center gap-2.5 rounded-xl border border-line bg-panel-2 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-emerald-400/50 hover:bg-accent active:scale-[0.99]"
+                      >
+                        <BadgeCheck className="size-4 shrink-0 text-emerald-400" />
+                        <span className="flex-1">{s.name}</span>
+                        <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                      </a>
+                    ))}
+                  </div>
+                  {streaming.length === 0 && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      No official listing found — these open a search on each
+                      service.
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* Others */}
+              <div className="mb-2 mt-5 flex items-center justify-between">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Others
+                </p>
                 <button
                   onClick={() => setEditingSources((v) => !v)}
                   aria-label={
