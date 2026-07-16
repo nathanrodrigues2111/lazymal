@@ -154,7 +154,7 @@ export async function fetchDubBatch(
   const parts = ids
     .map(
       (id, i) =>
-        `m${i}:Media(idMal:${id},type:ANIME){characters(perPage:10,sort:[ROLE,RELEVANCE]){edges{node{id} voiceActors(language:ENGLISH){id}}}}`,
+        `m${i}:Media(idMal:${id},type:ANIME){characters(perPage:5,sort:[ROLE,RELEVANCE]){edges{node{id} voiceActors(language:ENGLISH){id}}}}`,
     )
     .join(' ')
   const query = `query{${parts}}`

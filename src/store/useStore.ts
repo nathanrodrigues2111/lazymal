@@ -187,10 +187,11 @@ export const useStore = create<StoreState>((set, get) => ({
     if (todo.length === 0) return
 
     set({ dubEnriching: true })
-    // AniList checks ~12 titles per request, so a whole season is a handful of
-    // calls; a little concurrency keeps it quick without tripping rate limits.
+    // AniList checks up to ~40 titles per request, so a whole season is only a
+    // few calls — fast, and well under the rate limit even with a little
+    // concurrency.
     const chunks: number[][] = []
-    for (let i = 0; i < todo.length; i += 12) chunks.push(todo.slice(i, i + 12))
+    for (let i = 0; i < todo.length; i += 40) chunks.push(todo.slice(i, i + 40))
     let next = 0
     const worker = async () => {
       while (next < chunks.length && my === dubToken) {
@@ -228,8 +229,8 @@ export const useStore = create<StoreState>((set, get) => ({
         known[mid] === undefined &&
         cachedDub(mid) === undefined,
     )
-    for (let i = 0; i < todo.length; i += 12) {
-      const map = await fetchDubBatch(todo.slice(i, i + 12))
+    for (let i = 0; i < todo.length; i += 40) {
+      const map = await fetchDubBatch(todo.slice(i, i + 40))
       const entries = Object.entries(map)
       if (entries.length > 0)
         set((s) => {
