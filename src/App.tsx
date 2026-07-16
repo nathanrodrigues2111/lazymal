@@ -198,7 +198,7 @@ export default function App() {
                           : forYou
                             ? '🌸'
                             : dubFilter === 'dubbed'
-                              ? '🎙️'
+                              ? '🌐'
                               : seasonEmoji(season.season)}
                       </motion.span>
                     </AnimatePresence>
