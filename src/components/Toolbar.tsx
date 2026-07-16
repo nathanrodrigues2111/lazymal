@@ -89,8 +89,8 @@ export function Toolbar() {
                 className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-panel p-1.5 shadow-2xl shadow-black/50"
               >
                 {/* Single-select list. "Dubbed" (anime only) sits just before
-                    A–Z and shows dubbed titles by highest MAL score. Picking any
-                    sort clears it; exactly one row is ever active. */}
+                    A–Z and shows dubbed titles by popularity. Picking any sort
+                    clears it; exactly one row is ever active. */}
                 {SORT_KEYS.map((key) => {
                   const active = dubFilter === 'off' && sort === key
                   return (
@@ -99,7 +99,7 @@ export function Toolbar() {
                         <button
                           onClick={() => {
                             setDubFilter('dubbed')
-                            setSort('score')
+                            setSort('popularity')
                             setOpen(false)
                           }}
                           className={cn(

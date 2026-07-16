@@ -35,7 +35,7 @@ const STEPS: Step[] = [
   },
   {
     title: 'Sort & dubs',
-    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. Anime also has a “Dub” option that shows only titles with an English dub, ranked by score. On mobile, tap the bottom-right of the screen to open this menu.',
+    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. Anime also has a “Dub” option that shows only titles with an English dub, ranked by popularity. On mobile, tap the bottom-right of the screen to open this menu.',
     selector: '[data-tour="sort"]',
   },
   {

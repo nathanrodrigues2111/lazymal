@@ -43,7 +43,7 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const applyView = (v: View) => {
     if (v === 'dubbed') {
       setDubFilter('dubbed')
-      setSort('score')
+      setSort('popularity')
     } else {
       setSort(v)
       setDubFilter('off')
