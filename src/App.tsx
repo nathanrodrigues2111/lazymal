@@ -181,10 +181,10 @@ export default function App() {
                         key={
                           isManga ? 'manga' : forYou ? 'foryou' : season.season
                         }
-                        initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
+                        initial={{ opacity: 0, scale: 0.6, rotate: -18 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        exit={{ opacity: 0, scale: 0.6, rotate: 18 }}
+                        transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
                       >
                         {isManga ? '📖' : forYou ? '🌸' : seasonEmoji(season.season)}
                       </motion.span>
