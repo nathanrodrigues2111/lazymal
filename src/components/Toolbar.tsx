@@ -126,7 +126,9 @@ export function Toolbar() {
                             : 'text-foreground hover:bg-accent',
                         )}
                       >
-                        {SORT_LABELS[key]}
+                        {key === 'airing' && media === 'manga'
+                          ? 'Published soon'
+                          : SORT_LABELS[key]}
                         {active && <Check className="size-4" />}
                       </button>
                     </Fragment>
