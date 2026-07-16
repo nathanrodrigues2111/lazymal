@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowUpDown, Check, RefreshCw, Search } from 'lucide-react'
 
@@ -83,49 +83,50 @@ export function Toolbar() {
                 transition={{ duration: 0.16 }}
                 className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-panel p-1.5 shadow-2xl shadow-black/50"
               >
-                {/* Single-select list: sort options, then "Dubbed" (anime
-                    only) at the bottom — it shows dubbed titles by highest MAL
-                    score. Picking any sort clears it; exactly one is active. */}
+                {/* Single-select list. "Dubbed" (anime only) sits just before
+                    A–Z and shows dubbed titles by highest MAL score. Picking any
+                    sort clears it; exactly one row is ever active. */}
                 {SORT_KEYS.map((key) => {
                   const active = dubFilter === 'off' && sort === key
                   return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setSort(key)
-                        setDubFilter('off')
-                        setOpen(false)
-                      }}
-                      className={cn(
-                        'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                        active
-                          ? 'bg-primary/15 text-primary'
-                          : 'text-foreground hover:bg-accent',
+                    <Fragment key={key}>
+                      {key === 'title' && media === 'anime' && (
+                        <button
+                          onClick={() => {
+                            setDubFilter('dubbed')
+                            setSort('score')
+                            setOpen(false)
+                          }}
+                          className={cn(
+                            'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                            dubFilter === 'dubbed'
+                              ? 'bg-primary/15 text-primary'
+                              : 'text-foreground hover:bg-accent',
+                          )}
+                        >
+                          Dubbed
+                          {dubFilter === 'dubbed' && <Check className="size-4" />}
+                        </button>
                       )}
-                    >
-                      {SORT_LABELS[key]}
-                      {active && <Check className="size-4" />}
-                    </button>
+                      <button
+                        onClick={() => {
+                          setSort(key)
+                          setDubFilter('off')
+                          setOpen(false)
+                        }}
+                        className={cn(
+                          'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                          active
+                            ? 'bg-primary/15 text-primary'
+                            : 'text-foreground hover:bg-accent',
+                        )}
+                      >
+                        {SORT_LABELS[key]}
+                        {active && <Check className="size-4" />}
+                      </button>
+                    </Fragment>
                   )
                 })}
-                {media === 'anime' && (
-                  <button
-                    onClick={() => {
-                      setDubFilter('dubbed')
-                      setSort('score')
-                      setOpen(false)
-                    }}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                      dubFilter === 'dubbed'
-                        ? 'bg-primary/15 text-primary'
-                        : 'text-foreground hover:bg-accent',
-                    )}
-                  >
-                    Dubbed
-                    {dubFilter === 'dubbed' && <Check className="size-4" />}
-                  </button>
-                )}
               </motion.div>
             </>
           )}
