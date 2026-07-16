@@ -191,13 +191,15 @@ export default function App() {
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span
-                        key={isManga ? 'manga' : season.season}
+                        key={
+                          isManga ? 'manga' : forYou ? 'foryou' : season.season
+                        }
                         initial={{ opacity: 0, scale: 0.4, rotate: -35 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         exit={{ opacity: 0, scale: 0.4, rotate: 35 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                       >
-                        {isManga ? '📖' : seasonEmoji(season.season)}
+                        {isManga ? '📖' : forYou ? '🌸' : seasonEmoji(season.season)}
                       </motion.span>
                     </AnimatePresence>
                   </motion.span>
