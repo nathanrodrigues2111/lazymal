@@ -70,6 +70,19 @@ export default function App() {
     return () => clearTimeout(id)
   }, [])
 
+  // Suppress the right-click / long-press context menu (copy · paste · select
+  // all) app-wide for a native feel — but leave it on real text fields so the
+  // search box still works normally.
+  useEffect(() => {
+    const onContextMenu = (e: MouseEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t?.closest('input, textarea, [contenteditable="true"]')) return
+      e.preventDefault()
+    }
+    document.addEventListener('contextmenu', onContextMenu)
+    return () => document.removeEventListener('contextmenu', onContextMenu)
+  }, [])
+
   const isManga = media === 'manga'
 
   // Header subtitle reflects what the grid is actually showing, so it isn't a
