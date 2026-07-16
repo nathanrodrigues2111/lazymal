@@ -179,7 +179,7 @@ export function AnimeGrid() {
 
       {!searchMode && dubFilter !== 'off' && dubEnriching && (
         <p className="text-xs font-medium text-muted-foreground">
-          {dubFilter === 'dubbed' ? 'Finding dubbed titles' : 'Finding sub-only titles'}
+          {dubFilter === 'dubbed' ? 'Finding dub titles' : 'Finding sub titles'}
           … ({items.length} so far)
         </p>
       )}

@@ -407,20 +407,18 @@ export function DetailSheet() {
                     )}
                   />
                   {dub === true
-                    ? 'Subbed & Dubbed'
+                    ? 'Sub & Dub'
                     : dub === false
-                      ? 'Subbed · no dub yet'
-                      : 'Subbed'}
+                      ? 'Sub · no dub yet'
+                      : 'Sub'}
                 </span>
                 {(() => {
                   const total = epInfo?.total ?? shown.episodes
                   const aired = epInfo?.airedSub
                   let text: string | null = null
                   if (epInfo?.releasing && aired != null)
-                    text = total
-                      ? `${aired} of ${total} eps subbed`
-                      : `${aired} eps subbed so far`
-                  else if (total) text = `${total} episodes`
+                    text = total ? `${aired} of ${total} eps · sub` : `${aired} eps sub`
+                  else if (total) text = `${total} eps`
                   return text ? (
                     <span className="rounded-lg bg-panel-2 px-2.5 py-1 text-muted-foreground">
                       {text}
