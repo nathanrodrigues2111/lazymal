@@ -10,7 +10,13 @@ import {
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
-import { currentSeason, seasonLabel } from '@/lib/season'
+import {
+  SEASON_ORDER,
+  currentSeason,
+  seasonLabel,
+  shiftSeason,
+} from '@/lib/season'
+import { cn } from '@/lib/utils'
 import { Toolbar } from '@/components/Toolbar'
 import { AnimeGrid } from '@/components/AnimeGrid'
 import { PullToRefresh } from '@/components/PullToRefresh'
@@ -36,14 +42,14 @@ const Tour = lazy(() =>
   import('@/components/Tour').then((m) => ({ default: m.Tour })),
 )
 
-const SEASON = currentSeason()
-
 export default function App() {
   const load = useStore((s) => s.load)
   const refresh = useStore((s) => s.refresh)
   const prewarmOther = useStore((s) => s.prewarmOther)
   const media = useStore((s) => s.media)
   const query = useStore((s) => s.query)
+  const season = useStore((s) => s.season)
+  const setSeason = useStore((s) => s.setSeason)
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
   const forYou = usePrefs((s) => s.forYou)
@@ -73,7 +79,19 @@ export default function App() {
       ? 'For You'
       : isManga
         ? 'Top manga'
-        : seasonLabel(SEASON)
+        : seasonLabel(season)
+
+  // Tapping the header (anime, not searching/For You) walks back through recent
+  // seasons — current → −1 → −2 → −3 → back to current — so all four seasons
+  // (spring/summer/fall/winter) are reachable in a loop.
+  const canCycleSeason = !isManga && !forYou && !query.trim()
+  const cycleSeason = () => {
+    const cur = currentSeason()
+    const total = (s: typeof cur) => s.year * 4 + SEASON_ORDER.indexOf(s.season)
+    const offset = total(cur) - total(season) // 0 = current, up to 3 back
+    const next = offset >= 3 ? 0 : offset + 1
+    setSeason(shiftSeason(cur, -next))
+  }
 
   // Spin the sakura as the page scrolls (spring-smoothed so it eases nicely).
   // Sakura does one smooth full spin the moment the page scroll touches the
@@ -140,7 +158,15 @@ export default function App() {
                     </AnimatePresence>
                   </motion.span>
                 </button>
-                <div className="leading-tight">
+                <button
+                  type="button"
+                  onClick={canCycleSeason ? cycleSeason : undefined}
+                  aria-label={canCycleSeason ? 'Change season' : undefined}
+                  className={cn(
+                    'p-0 text-left leading-tight',
+                    canCycleSeason && 'cursor-pointer active:scale-[0.98]',
+                  )}
+                >
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.div
                       key={isManga ? 'manga' : 'anime'}
@@ -165,12 +191,13 @@ export default function App() {
                             }}
                           >
                             {headerSubtitle}
+                            {canCycleSeason && ' ▾'}
                           </motion.p>
                         </AnimatePresence>
                       </div>
                     </motion.div>
                   </AnimatePresence>
-                </div>
+                </button>
               </div>
               <MediaToggle />
             </div>
