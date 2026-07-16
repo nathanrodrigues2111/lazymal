@@ -181,13 +181,6 @@ export function AnimeGrid() {
 
       <ExternalSearch query={query} media={media} />
 
-      {!searchMode && dubFilter !== 'off' && dubEnriching && (
-        <p className="text-xs font-medium text-muted-foreground">
-          {dubFilter === 'dubbed' ? 'Finding dub titles' : 'Finding sub titles'}
-          … ({items.length} so far)
-        </p>
-      )}
-
       {searchMode && (items.length > 0 || searching) && (
         <p className="text-xs font-medium text-muted-foreground">
           {searching
