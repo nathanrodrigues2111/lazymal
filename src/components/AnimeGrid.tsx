@@ -28,6 +28,7 @@ export function AnimeGrid() {
   const media = useStore((s) => s.media)
   const clearGenres = useStore((s) => s.clearGenres)
   const dubFilter = useStore((s) => s.dubFilter)
+  const setDubFilter = useStore((s) => s.setDubFilter)
   const dub = useStore((s) => s.dub)
   const dubEnriching = useStore((s) => s.dubEnriching)
   const enrichDubIds = useStore((s) => s.enrichDubIds)
@@ -43,6 +44,7 @@ export function AnimeGrid() {
     if (!query.trim()) return
     if (genreIds.length > 0) clearGenres()
     if (forYou) toggleForYou()
+    if (dubFilter !== 'off') setDubFilter('off')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query])
 

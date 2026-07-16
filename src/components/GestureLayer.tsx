@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+
 import { usePrefs } from '@/store/usePrefs'
 import { useStore } from '@/store/useStore'
 import { SORT_LABELS } from '@/lib/filter'
@@ -9,9 +11,9 @@ const SORT_KEYS = Object.keys(SORT_LABELS) as SortKey[]
 /**
  * Mobile bottom bar (a soft gradient scrim, off while a sheet is open) split
  * into three invisible tap zones:
- *   • Left   → cycle For You ↔ All
- *   • Center → Search
- *   • Right  → open the sort menu
+ *   • Left   → cycle For You → All → Dub (Dub is anime-only)
+ *   • Center → Search (double-tap steps back through seasons, anime-only)
+ *   • Right  → open the sort menu (tap again to advance the sort)
  * Zones capture taps so cards underneath aren't hit; `touch-action: pan-y`
  * still lets you scroll through it.
  */
@@ -24,29 +26,26 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const setSort = useStore((s) => s.setSort)
   const dubFilter = useStore((s) => s.dubFilter)
   const setDubFilter = useStore((s) => s.setDubFilter)
+  const cycleSeason = useStore((s) => s.cycleSeason)
 
-  const cycleForYou = () => {
-    if (forYou) clearGenres() // going For You -> All
-    toggleForYou()
-  }
-
-  // The dropdown's combined single-select order: the sort keys, with "Dubbed"
-  // (anime only) inserted just before A–Z. Cycling the bottom-right zone walks
-  // this exact list so it can land on Dubbed too.
-  type View = SortKey | 'dubbed'
-  const views: View[] = []
-  for (const k of SORT_KEYS) {
-    if (k === 'title' && media === 'anime') views.push('dubbed')
-    views.push(k)
-  }
-  const currentView: View = dubFilter === 'dubbed' ? 'dubbed' : sort
-  const applyView = (v: View) => {
-    if (v === 'dubbed') {
-      setDubFilter('dubbed')
-      setSort('popularity')
-    } else {
-      setSort(v)
+  // Left zone: For You → All → Dub → For You (Dub skipped for manga).
+  const cycleLeft = () => {
+    if (forYou) {
+      // For You → All
+      toggleForYou()
+      clearGenres()
       setDubFilter('off')
+    } else if (dubFilter === 'dubbed') {
+      // Dub → For You
+      setDubFilter('off')
+      clearGenres()
+      toggleForYou()
+    } else if (media === 'anime') {
+      // All → Dub
+      setDubFilter('dubbed')
+    } else {
+      // Manga has no Dub, so All → For You
+      toggleForYou()
     }
   }
 
@@ -61,12 +60,29 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     el?.focus()
   }
 
+  // Center zone: single tap searches; a quick second tap (anime) steps back
+  // through seasons instead. A short timer distinguishes the two.
+  const centerTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const centerTap = () => {
+    if (centerTimer.current) {
+      clearTimeout(centerTimer.current)
+      centerTimer.current = undefined
+      if (media === 'anime') cycleSeason()
+      else openSearch()
+      return
+    }
+    centerTimer.current = setTimeout(() => {
+      centerTimer.current = undefined
+      openSearch()
+    }, 260)
+  }
+
   const openSort = () => {
     // If the sort menu is already open, advance the selection through the list
     // (menu stays open so you watch the highlight move). Otherwise, open it.
     if (document.querySelector('[data-sort-menu]')) {
-      const i = views.indexOf(currentView)
-      applyView(views[(i + 1) % views.length])
+      const i = SORT_KEYS.indexOf(sort)
+      setSort(SORT_KEYS[(i + 1) % SORT_KEYS.length])
       return
     }
     // Opening the menu — dismiss any active search first.
@@ -88,14 +104,14 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     >
       <button
         type="button"
-        aria-label="Cycle For You and All"
-        onClick={cycleForYou}
+        aria-label="Cycle For You, All and Dub"
+        onClick={cycleLeft}
         className={zone}
       />
       <button
         type="button"
         aria-label="Search"
-        onClick={openSearch}
+        onClick={centerTap}
         className={zone}
       />
       <button

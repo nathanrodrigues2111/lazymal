@@ -10,13 +10,7 @@ import {
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
-import {
-  SEASON_ORDER,
-  currentSeason,
-  seasonEmoji,
-  seasonLabel,
-  shiftSeason,
-} from '@/lib/season'
+import { seasonEmoji, seasonLabel } from '@/lib/season'
 import { cn } from '@/lib/utils'
 import { Toolbar } from '@/components/Toolbar'
 import { AnimeGrid } from '@/components/AnimeGrid'
@@ -50,7 +44,7 @@ export default function App() {
   const media = useStore((s) => s.media)
   const query = useStore((s) => s.query)
   const season = useStore((s) => s.season)
-  const setSeason = useStore((s) => s.setSeason)
+  const cycleSeason = useStore((s) => s.cycleSeason)
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
   const forYou = usePrefs((s) => s.forYou)
@@ -99,13 +93,6 @@ export default function App() {
   // seasons — current → −1 → −2 → −3 → back to current — so all four seasons
   // (spring/summer/fall/winter) are reachable in a loop.
   const canCycleSeason = !isManga && !forYou && !query.trim()
-  const cycleSeason = () => {
-    const cur = currentSeason()
-    const total = (s: typeof cur) => s.year * 4 + SEASON_ORDER.indexOf(s.season)
-    const offset = total(cur) - total(season) // 0 = current, up to 3 back
-    const next = offset >= 3 ? 0 : offset + 1
-    setSeason(shiftSeason(cur, -next))
-  }
 
   // Season icon: tap cycles the season (like the title); press-and-hold opens
   // settings/taste. A long-press timer fires the modal; a quick release cycles.

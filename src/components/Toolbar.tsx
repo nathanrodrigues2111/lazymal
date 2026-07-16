@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowUpDown, Check, RefreshCw, Search } from 'lucide-react'
 
@@ -18,8 +18,6 @@ export function Toolbar() {
   const setSort = useStore((s) => s.setSort)
   const refresh = useStore((s) => s.refresh)
   const media = useStore((s) => s.media)
-  const dubFilter = useStore((s) => s.dubFilter)
-  const setDubFilter = useStore((s) => s.setDubFilter)
   const [open, setOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -88,52 +86,26 @@ export function Toolbar() {
                 transition={{ duration: 0.16 }}
                 className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-panel p-1.5 shadow-2xl shadow-black/50"
               >
-                {/* Single-select list. "Dubbed" (anime only) sits just before
-                    A–Z and shows dubbed titles by popularity. Picking any sort
-                    clears it; exactly one row is ever active. */}
-                {SORT_KEYS.map((key) => {
-                  const active = dubFilter === 'off' && sort === key
-                  return (
-                    <Fragment key={key}>
-                      {key === 'title' && media === 'anime' && (
-                        <button
-                          onClick={() => {
-                            setDubFilter('dubbed')
-                            setSort('popularity')
-                            setOpen(false)
-                          }}
-                          className={cn(
-                            'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                            dubFilter === 'dubbed'
-                              ? 'bg-primary/15 text-primary'
-                              : 'text-foreground hover:bg-accent',
-                          )}
-                        >
-                          Dubbed
-                          {dubFilter === 'dubbed' && <Check className="size-4" />}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setSort(key)
-                          setDubFilter('off')
-                          setOpen(false)
-                        }}
-                        className={cn(
-                          'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                          active
-                            ? 'bg-primary/15 text-primary'
-                            : 'text-foreground hover:bg-accent',
-                        )}
-                      >
-                        {key === 'airing' && media === 'manga'
-                          ? 'Published soon'
-                          : SORT_LABELS[key]}
-                        {active && <Check className="size-4" />}
-                      </button>
-                    </Fragment>
-                  )
-                })}
+                {SORT_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setSort(key)
+                      setOpen(false)
+                    }}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                      sort === key
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-foreground hover:bg-accent',
+                    )}
+                  >
+                    {key === 'airing' && media === 'manga'
+                      ? 'Published soon'
+                      : SORT_LABELS[key]}
+                    {sort === key && <Check className="size-4" />}
+                  </button>
+                ))}
               </motion.div>
             </>
           )}

@@ -34,13 +34,13 @@ const STEPS: Step[] = [
     selector: '#app-search',
   },
   {
-    title: 'Sort & dubs',
-    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. Anime also has a “Dub” option that shows only titles with an English dub, ranked by popularity. On mobile, tap the bottom-right of the screen to open this menu.',
+    title: 'Sort',
+    body: 'Reorder the grid: airing soon, top rated, most popular, most members, A–Z, or newest. On mobile, tap the bottom-right of the screen to open this menu.',
     selector: '[data-tour="sort"]',
   },
   {
-    title: 'Genres, For You & All',
-    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “All” resets. Shortcut: tap the bottom-left of the screen to cycle between For You and All.',
+    title: 'For You, Dub, All & genres',
+    body: 'Scroll the chips and tap to filter. “For You” matches your taste; “Dub” (anime) shows only titles with an English dub; “All” resets. Shortcut: tap the bottom-left of the screen to cycle For You → All → Dub.',
     selector: '[data-tour="genres"]',
   },
   {

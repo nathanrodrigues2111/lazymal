@@ -1,7 +1,12 @@
 import { create } from 'zustand'
 import type { Anime, DubFilter, Media, Season, SortKey } from '../lib/types'
 import { fetchManga, fetchNow, fetchSeason } from '../lib/jikan'
-import { currentSeason, sameSeason } from '../lib/season'
+import {
+  SEASON_ORDER,
+  currentSeason,
+  sameSeason,
+  shiftSeason,
+} from '../lib/season'
 import { readCache, writeCache } from '../lib/cache'
 import { cachedDub, fetchDubBatch, loadDubCache } from '../lib/dub'
 
@@ -34,6 +39,8 @@ interface StoreState {
   prewarmOther: () => Promise<void>
   setMedia: (media: Media) => void
   setSeason: (season: Season) => void
+  /** Step back through recent seasons (current → −1 → −2 → −3 → current). */
+  cycleSeason: () => void
   toggleGenre: (id: number) => void
   clearGenres: () => void
   setSort: (sort: SortKey) => void
@@ -155,6 +162,15 @@ export const useStore = create<StoreState>((set, get) => ({
     if (sameSeason(season, get().season)) return
     set({ season, genreIds: [], query: '' })
     void get().load()
+  },
+
+  cycleSeason: () => {
+    if (get().media !== 'anime') return
+    const cur = currentSeason()
+    const total = (s: Season) => s.year * 4 + SEASON_ORDER.indexOf(s.season)
+    const offset = total(cur) - total(get().season) // 0 = current, up to 3 back
+    const next = offset >= 3 ? 0 : offset + 1
+    get().setSeason(shiftSeason(cur, -next))
   },
 
   toggleGenre: (id) =>

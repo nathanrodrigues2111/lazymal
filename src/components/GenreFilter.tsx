@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Languages, Sparkles } from 'lucide-react'
 
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
@@ -30,6 +30,8 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
   const genreIds = useStore((s) => s.genreIds)
   const toggleGenre = useStore((s) => s.toggleGenre)
   const clearGenres = useStore((s) => s.clearGenres)
+  const dubFilter = useStore((s) => s.dubFilter)
+  const setDubFilter = useStore((s) => s.setDubFilter)
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
@@ -94,12 +96,31 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
           animate="show"
           className="no-scrollbar flex scroll-smooth gap-2 overflow-x-auto pb-1"
         >
-          {/* "All" clears any genre selection and For You. */}
+          {/* Dub filter (anime only) — sits between For You and All, combines
+              with genres, and is mutually exclusive with For You. */}
+          {media === 'anime' && (
+            <Chip
+              active={dubFilter === 'dubbed'}
+              onClick={() => {
+                if (dubFilter === 'dubbed') {
+                  setDubFilter('off')
+                } else {
+                  setDubFilter('dubbed')
+                  if (forYou) toggleForYou()
+                }
+              }}
+            >
+              <Languages className="size-3" />
+              Dub
+            </Chip>
+          )}
+          {/* "All" resets everything: genres, For You, and the Dub filter. */}
           <Chip
-            active={genreIds.length === 0 && !forYou}
+            active={genreIds.length === 0 && !forYou && dubFilter === 'off'}
             onClick={() => {
               clearGenres()
               if (forYou) toggleForYou()
+              setDubFilter('off')
             }}
           >
             All
