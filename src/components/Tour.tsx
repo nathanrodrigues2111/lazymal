@@ -24,6 +24,11 @@ const STEPS: Step[] = [
     selector: '[data-tour="media"]',
   },
   {
+    title: 'Change season',
+    body: 'Tap the title here to step back through recent seasons — Summer → Spring → Winter → Fall — then loop back to the current one.',
+    selector: '[data-tour="season"]',
+  },
+  {
     title: 'Search',
     body: 'Tap here to find any title across all genres. On mobile you can also tap the bottom-center of the screen to jump straight to search.',
     selector: '#app-search',

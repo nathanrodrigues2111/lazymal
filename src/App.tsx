@@ -160,6 +160,7 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  data-tour="season"
                   onClick={canCycleSeason ? cycleSeason : undefined}
                   aria-label={canCycleSeason ? 'Change season' : undefined}
                   className={cn(
@@ -191,7 +192,6 @@ export default function App() {
                             }}
                           >
                             {headerSubtitle}
-                            {canCycleSeason && ' ▾'}
                           </motion.p>
                         </AnimatePresence>
                       </div>
