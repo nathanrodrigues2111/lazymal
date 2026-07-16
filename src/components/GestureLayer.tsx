@@ -19,12 +19,35 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
   const clearGenres = useStore((s) => s.clearGenres)
+  const media = useStore((s) => s.media)
   const sort = useStore((s) => s.sort)
   const setSort = useStore((s) => s.setSort)
+  const dubFilter = useStore((s) => s.dubFilter)
+  const setDubFilter = useStore((s) => s.setDubFilter)
 
   const cycleForYou = () => {
     if (forYou) clearGenres() // going For You -> All
     toggleForYou()
+  }
+
+  // The dropdown's combined single-select order: the sort keys, with "Dubbed"
+  // (anime only) inserted just before A–Z. Cycling the bottom-right zone walks
+  // this exact list so it can land on Dubbed too.
+  type View = SortKey | 'dubbed'
+  const views: View[] = []
+  for (const k of SORT_KEYS) {
+    if (k === 'title' && media === 'anime') views.push('dubbed')
+    views.push(k)
+  }
+  const currentView: View = dubFilter === 'dubbed' ? 'dubbed' : sort
+  const applyView = (v: View) => {
+    if (v === 'dubbed') {
+      setDubFilter('dubbed')
+      setSort('score')
+    } else {
+      setSort(v)
+      setDubFilter('off')
+    }
   }
 
   const sortBtn = () =>
@@ -42,8 +65,8 @@ export function GestureLayer({ disabled }: { disabled: boolean }) {
     // If the sort menu is already open, advance the selection through the list
     // (menu stays open so you watch the highlight move). Otherwise, open it.
     if (document.querySelector('[data-sort-menu]')) {
-      const i = SORT_KEYS.indexOf(sort)
-      setSort(SORT_KEYS[(i + 1) % SORT_KEYS.length])
+      const i = views.indexOf(currentView)
+      applyView(views[(i + 1) % views.length])
       return
     }
     // Opening the menu — dismiss any active search first.
