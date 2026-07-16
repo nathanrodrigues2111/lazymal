@@ -43,6 +43,9 @@ interface StoreState {
   /** Look up dub status for the loaded anime list in the background, caching as
    * it goes. `refresh` re-checks titles not yet known to be dubbed. */
   enrichDub: (refresh?: boolean) => Promise<void>
+  /** Look up dub status for an explicit id list (e.g. live search results),
+   * which aren't in the loaded season list. */
+  enrichDubIds: (ids: number[]) => Promise<void>
   /** Ensure a single title's dub status is known (used by the detail sheet). */
   ensureDub: (id: number) => Promise<void>
 }
@@ -204,6 +207,37 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     await Promise.all(Array.from({ length: 3 }, worker))
     if (my === dubToken) set({ dubEnriching: false })
+  },
+
+  enrichDubIds: async (ids) => {
+    if (get().media !== 'anime' || ids.length === 0) return
+    const known = get().dub
+    // Fill in any statuses already cached but not yet in the map (instant).
+    const fromCache: Record<number, boolean> = {}
+    for (const mid of ids) {
+      if (known[mid] !== undefined) continue
+      const c = cachedDub(mid)
+      if (c !== undefined) fromCache[mid] = c
+    }
+    if (Object.keys(fromCache).length > 0)
+      set((s) => ({ dub: { ...s.dub, ...fromCache } }))
+    // Look up the rest from AniList, batched.
+    const todo = ids.filter(
+      (mid) =>
+        get().dub[mid] === undefined &&
+        known[mid] === undefined &&
+        cachedDub(mid) === undefined,
+    )
+    for (let i = 0; i < todo.length; i += 12) {
+      const map = await fetchDubBatch(todo.slice(i, i + 12))
+      const entries = Object.entries(map)
+      if (entries.length > 0)
+        set((s) => {
+          const dub = { ...s.dub }
+          for (const [id, v] of entries) dub[+id] = v
+          return { dub }
+        })
+    }
   },
 
   ensureDub: async (id) => {

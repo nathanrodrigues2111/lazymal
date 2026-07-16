@@ -30,6 +30,7 @@ export function AnimeGrid() {
   const dubFilter = useStore((s) => s.dubFilter)
   const dub = useStore((s) => s.dub)
   const dubEnriching = useStore((s) => s.dubEnriching)
+  const enrichDubIds = useStore((s) => s.enrichDubIds)
   const favorites = usePrefs((s) => s.genres)
   const forYou = usePrefs((s) => s.forYou)
   const toggleForYou = usePrefs((s) => s.toggleForYou)
@@ -107,12 +108,15 @@ export function AnimeGrid() {
       if (cancelled) return
       setRemote(r)
       setSearching(false)
+      // Search results aren't in the season list, so enrich their dub status
+      // too — otherwise cards/badges show no dub info for searched titles.
+      if (media === 'anime') void enrichDubIds(r.map((a) => a.mal_id))
     }, 550)
     return () => {
       cancelled = true
       clearTimeout(t)
     }
-  }, [query, forYou, media])
+  }, [query, forYou, media, enrichDubIds])
 
   // Progressive rendering: only mount a batch of cards, appending more as the
   // sentinel nears the viewport. Keeps the DOM small and the first paint cheap
