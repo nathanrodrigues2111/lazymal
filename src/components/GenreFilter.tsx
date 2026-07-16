@@ -78,7 +78,13 @@ export function GenreFilter({ genres }: { genres: Genre[] }) {
           animate="show"
           className="flex shrink-0 gap-2"
         >
-          <Chip active={forYou} onClick={toggleForYou}>
+          <Chip
+            active={forYou}
+            onClick={() => {
+              if (!forYou) setDubFilter('off') // For You and Dub are exclusive
+              toggleForYou()
+            }}
+          >
             <Sparkles className="size-3" />
             For You
           </Chip>

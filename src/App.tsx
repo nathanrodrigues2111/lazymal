@@ -45,6 +45,7 @@ export default function App() {
   const query = useStore((s) => s.query)
   const season = useStore((s) => s.season)
   const cycleSeason = useStore((s) => s.cycleSeason)
+  const dubFilter = useStore((s) => s.dubFilter)
   const detailOpen = useStore((s) => s.selected !== null)
   const onboarded = usePrefs((s) => s.onboarded)
   const forYou = usePrefs((s) => s.forYou)
@@ -179,14 +180,26 @@ export default function App() {
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span
                         key={
-                          isManga ? 'manga' : forYou ? 'foryou' : season.season
+                          isManga
+                            ? 'manga'
+                            : forYou
+                              ? 'foryou'
+                              : dubFilter === 'dubbed'
+                                ? 'dub'
+                                : season.season
                         }
                         initial={{ opacity: 0, scale: 0.6, rotate: -18 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         exit={{ opacity: 0, scale: 0.6, rotate: 18 }}
                         transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
                       >
-                        {isManga ? '📖' : forYou ? '🌸' : seasonEmoji(season.season)}
+                        {isManga
+                          ? '📖'
+                          : forYou
+                            ? '🌸'
+                            : dubFilter === 'dubbed'
+                              ? '🎙️'
+                              : seasonEmoji(season.season)}
                       </motion.span>
                     </AnimatePresence>
                   </motion.span>
