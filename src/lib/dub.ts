@@ -9,6 +9,8 @@
  * dub later and a stale "false" would otherwise hide it forever. Once the short
  * TTL lapses (or the user refreshes) the status is re-checked.
  */
+import { API_BASE } from './jikan'
+
 const ANILIST = 'https://graphql.anilist.co'
 // v2: v1 was poisoned by an earlier Worker-side detector that wrongly cached
 // "false" for dubbed titles; bumping the key discards those stale entries.
@@ -65,6 +67,25 @@ function save(results: Record<number, boolean>): void {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * Approximate dubbed-episode count for a title, from our worker (which proxies
+ * AnimeSchedule server-side — it sends no CORS headers). Null when no dub is
+ * tracked. The count is an estimate (weekly cadence from the dub premiere).
+ */
+export async function fetchDubCount(
+  id: number,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  try {
+    const res = await fetch(`${API_BASE}/anime/${id}/dubcount`, { signal })
+    if (!res.ok) return null
+    const body = (await res.json()) as { dubbed?: number | null }
+    return body.dubbed ?? null
+  } catch {
+    return null
+  }
+}
 
 export interface EpisodeInfo {
   /** Total planned episodes (null when unknown/ongoing with no set count). */

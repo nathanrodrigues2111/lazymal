@@ -30,6 +30,7 @@ import {
   topMangaOfficial,
 } from './official'
 import {
+  dubEpisodeCount,
   scrapeAdaptedManga,
   scrapeDetail,
   scrapeSearch,
@@ -169,6 +170,17 @@ export default {
               : await scrapeSearch(m, q, page),
           ),
         )
+      }
+      // ---- approximate dubbed-episode count: /anime/{id}/dubcount ----
+      else if (
+        seg[0] === 'anime' &&
+        /^\d+$/.test(seg[1] || '') &&
+        seg[2] === 'dubcount'
+      ) {
+        const id = parseInt(seg[1], 10)
+        const c = await dubEpisodeCount(id)
+        // Changes ~weekly; cache 6h so the estimate stays roughly current.
+        resp = json({ mal_id: id, ...c }, 200, 60 * 60 * 6)
       }
       // ---- official links: /{anime|manga}/{id}/streaming ----
       // Streaming services for anime, licensed readers for manga.

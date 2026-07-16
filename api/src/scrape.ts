@@ -691,8 +691,63 @@ export async function scrapeDetail(
   return it
 }
 
-// Note: dub detection lives in the frontend (it queries AniList directly, which
-// 403s Cloudflare Worker requests but allows browser CORS).
+// Note: dub *detection* lives in the frontend (it queries AniList directly,
+// which 403s Cloudflare Worker requests but allows browser CORS).
+
+// --- approximate dubbed-episode count --------------------------------------
+
+/**
+ * Approximate number of dubbed episodes released, via AnimeSchedule (the only
+ * source that tracks dub schedules), looked up by MAL id. No source reports an
+ * exact aired-dub count, so we estimate from the dub premiere assuming a weekly
+ * cadence — good to ±1 around delays/breaks. AnimeSchedule sends no CORS
+ * headers, so this must run server-side (the browser can't call it).
+ *
+ * Returns { dubbed, total }: `dubbed` is null when no dub is tracked/scheduled.
+ */
+export async function dubEpisodeCount(
+  id: number,
+): Promise<{ dubbed: number | null; total: number | null }> {
+  const res = await fetch(
+    `https://animeschedule.net/api/v3/anime?mal-ids=${id}`,
+    { headers: { 'User-Agent': HEADERS['User-Agent'], Accept: 'application/json' } },
+  )
+  if (!res.ok) return { dubbed: null, total: null }
+  const body = (await res.json()) as {
+    anime?: {
+      episodes?: number
+      status?: string
+      dubPremier?: string
+      dubEpisodeOverride?: { episodesAired?: number }
+    }[]
+  }
+  const a = body.anime?.[0]
+  if (!a) return { dubbed: null, total: null }
+
+  const total = a.episodes ?? null
+  const override = a.dubEpisodeOverride?.episodesAired ?? 0
+  const dp = a.dubPremier
+  const hasDub = !!dp && !dp.startsWith('0001')
+
+  let dubbed: number | null = null
+  if (override > 0) {
+    dubbed = total ? Math.min(override, total) : override
+  } else if (!hasDub) {
+    dubbed = null // no dub scheduled/tracked
+  } else {
+    const prem = Date.parse(dp as string)
+    const now = Date.now()
+    if (Number.isNaN(prem)) dubbed = null
+    else if (prem > now) dubbed = 0 // dub announced but not started
+    else if ((a.status || '').toLowerCase() === 'finished' && total)
+      dubbed = total // dub run complete
+    else {
+      const weeks = Math.floor((now - prem) / (7 * 24 * 3600 * 1000)) + 1
+      dubbed = total ? Math.min(weeks, total) : weeks
+    }
+  }
+  return { dubbed, total }
+}
 
 // --- search scraper --------------------------------------------------------
 

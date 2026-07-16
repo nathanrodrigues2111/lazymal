@@ -21,7 +21,7 @@ import {
 import { useStore } from '@/store/useStore'
 import { usePrefs } from '@/store/usePrefs'
 import { fetchDetails, fetchStreaming } from '@/lib/jikan'
-import { fetchEpisodeInfo, type EpisodeInfo } from '@/lib/dub'
+import { fetchDubCount, fetchEpisodeInfo, type EpisodeInfo } from '@/lib/dub'
 import { cn, compact } from '@/lib/utils'
 import { countdown, localAirLabel, nextAiring } from '@/lib/airing'
 import {
@@ -237,13 +237,18 @@ export function DetailSheet() {
   const dub = useStore((s) => (shown ? s.dub[shown.mal_id] : undefined))
   const ensureDub = useStore((s) => s.ensureDub)
   const [epInfo, setEpInfo] = useState<EpisodeInfo | null>(null)
+  const [dubCount, setDubCount] = useState<number | null>(null)
   useEffect(() => {
     setEpInfo(null)
+    setDubCount(null)
     if (shown && !isManga) {
       void ensureDub(shown.mal_id)
       let cancelled = false
       fetchEpisodeInfo(shown.mal_id).then((e) => {
         if (!cancelled) setEpInfo(e)
+      })
+      fetchDubCount(shown.mal_id).then((n) => {
+        if (!cancelled) setDubCount(n)
       })
       return () => {
         cancelled = true
@@ -406,11 +411,7 @@ export function DetailSheet() {
                       dub === true ? 'text-emerald-400' : 'text-muted-foreground',
                     )}
                   />
-                  {dub === true
-                    ? 'Sub & Dub'
-                    : dub === false
-                      ? 'Sub · no dub yet'
-                      : 'Sub'}
+                  {dub === true ? 'Sub & Dub' : 'Sub'}
                 </span>
                 {(() => {
                   const total = epInfo?.total ?? shown.episodes
@@ -425,6 +426,11 @@ export function DetailSheet() {
                     </span>
                   ) : null
                 })()}
+                {dubCount != null && dubCount > 0 && (
+                  <span className="rounded-lg bg-panel-2 px-2.5 py-1 text-muted-foreground">
+                    ~{dubCount} dub
+                  </span>
+                )}
               </div>
             )}
 
