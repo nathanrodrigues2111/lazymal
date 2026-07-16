@@ -83,27 +83,9 @@ export function Toolbar() {
                 transition={{ duration: 0.16 }}
                 className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-line bg-panel p-1.5 shadow-2xl shadow-black/50"
               >
-                {/* Single-select list. "Dubbed" (anime only) is one option
-                    that shows dubbed titles by highest MAL score; picking any
-                    sort clears it. Exactly one row is ever active. */}
-                {media === 'anime' && (
-                  <button
-                    onClick={() => {
-                      setDubFilter('dubbed')
-                      setSort('score')
-                      setOpen(false)
-                    }}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                      dubFilter === 'dubbed'
-                        ? 'bg-primary/15 text-primary'
-                        : 'text-foreground hover:bg-accent',
-                    )}
-                  >
-                    Dubbed
-                    {dubFilter === 'dubbed' && <Check className="size-4" />}
-                  </button>
-                )}
+                {/* Single-select list: sort options, then "Dubbed" (anime
+                    only) at the bottom — it shows dubbed titles by highest MAL
+                    score. Picking any sort clears it; exactly one is active. */}
                 {SORT_KEYS.map((key) => {
                   const active = dubFilter === 'off' && sort === key
                   return (
@@ -126,6 +108,24 @@ export function Toolbar() {
                     </button>
                   )
                 })}
+                {media === 'anime' && (
+                  <button
+                    onClick={() => {
+                      setDubFilter('dubbed')
+                      setSort('score')
+                      setOpen(false)
+                    }}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-colors',
+                      dubFilter === 'dubbed'
+                        ? 'bg-primary/15 text-primary'
+                        : 'text-foreground hover:bg-accent',
+                    )}
+                  >
+                    Dubbed
+                    {dubFilter === 'dubbed' && <Check className="size-4" />}
+                  </button>
+                )}
               </motion.div>
             </>
           )}
