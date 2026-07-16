@@ -31,6 +31,10 @@ export function Toolbar() {
     setRefreshing(false)
   }
 
+  // While searching, sort/filter has no effect (results aren't filtered or
+  // sorted), so hide that button and give the search input the full width.
+  const isSearching = query.trim().length > 0
+
   return (
     <div className="flex items-center gap-2">
       <div className="relative flex-1">
@@ -55,6 +59,7 @@ export function Toolbar() {
         <RefreshCw className={cn('size-4', refreshing && 'animate-spin')} />
       </Button>
 
+      {!isSearching && (
       <div className="relative" data-tour="sort">
         <Button
           variant="secondary"
@@ -132,6 +137,7 @@ export function Toolbar() {
           )}
         </AnimatePresence>
       </div>
+      )}
     </div>
   )
 }
